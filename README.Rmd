@@ -3,6 +3,7 @@ title: "Semi-parametric Benchmark Dosing with semibmd"
 author: "Alex Stringer"
 date: "`r Sys.Date()`"
 output: github_document
+  
 ---
 
 ```{r setup, include=FALSE}
