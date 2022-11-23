@@ -119,12 +119,79 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,monotone = 
 
   ## Create output object ##
 
-  out <- list(bmd = bmd_est,
-              bmdl = bmd_l_est)
+  out <- list(
+    model = mod,
+    bmd = bmd_est,
+    bmdl = bmd_l_est
+  )
   class(out) <- "semibmd"
   out
 }
 
+#' Summary method for \code{semibmd} objects
+#'
+#' Summary method for \code{semibmd} objects returned by \code{semibmd::benchmark_dose}.
+#' Combines the summary output of \code{scam/gam} with the benchmark dosing information
+#' computed by \code{benchmark_dose}.
+#'
+#' @param object Object of class \code{semibmd} returned by \code{semibmd::benchmark_dose}.
+#' @param x Object of class \code{summary.semibmd} to print.
+#' @param digits Number of digits to round bmd(l) for printing.
+#' @param ... Not used.
+#'
+#' @details This function first calls the appropriate \code{summary} method for the
+#' dose-response model, and then adds information about the benchmark dose and BMDL.
+#'
+#' @return Object of class \code{summary.semibmd}: a list with summary information, for printing
+#'
+#' @rdname summary.semibmd
+#'
+#' @export
+summary.semibmd <- function(object,...) {
+  modsummary <- list()
+  modsummary$modelsummary <- summary(object$model)
+  thebmd <- get_bmd(object)
+  modsummary$bmd <- thebmd[1]
+  modsummary$bmdl <- thebmd[2]
+  class(modsummary) <- 'summary.semibmd'
+  modsummary
+}
+#' @rdname summary.semibmd
+#' @export
+print.summary.semibmd <- function(x,digits = 4,...) {
+  cat("---\n")
+  cat("Dose-response model summary:\n")
+  cat("---\n")
+  print(x$modelsummary)
+  cat("---\n")
 
+  cat("Benchmark dose summary:\n")
+  cat("---\n")
+  print(data.frame(bmd = round(x$bmd,digits),bmdl = round(x$bmdl,digits)))
+  cat("---\n")
+}
 
-
+#' Plot method for \code{semibmd} objects
+#'
+#' Plot method for \code{semibmd} objects returned by \code{semibmd::benchmark_dose}.
+#' Combines the standard plot from \code{scam/gam} with the benchmark dosing information
+#' computed by \code{benchmark_dose} and \code{summary.semibmd}.
+#'
+#' @param x Object of class \code{semibmd} returned by \code{semibmd::benchmark_dose}.
+#' @param ... Not used.
+#'
+#' @details This function first calls \code{summary.semibmd}, then calls \code{plot.scam/gam}
+#' as appropriate and modifies the resulting plot with the benchmark dosing information.
+#'
+#' @return Prints a plot with the dose-response and benchmark dose information on it.
+#'
+#' @rdname plot.semibmd
+#'
+#' @export
+plot.semibmd <- function(x,...) {
+  mod <- get_model(x)
+  bmd <- get_bmd(x)
+  plotinfo <- plot(mod)
+  abline(v = bmd[1],lty='dotdash')
+  abline(v = bmd[2],lty='dotdash')
+}
