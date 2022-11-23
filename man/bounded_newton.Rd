@@ -24,7 +24,8 @@ This function solves \code{g(x)=0} for a solution satisfying \code{x>=min(bounds
 \code{x<=max(bounds)}, and \code{|g(x)|<eps}.
 }
 \examples{
-bounded_newton(function(x) x^2,c(-1,1))
-bounded_newton(~.x^2,c(-1,1))
+bounded_newton(function(x) x,c(-1,1))
+bounded_newton(~.x,c(-1,1))
+bounded_newton("force",c(-1,1))
 
 }
