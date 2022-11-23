@@ -74,6 +74,10 @@ summary(mod)
 plot(mod)
 ```
 
+The `summary` method just appends the estimated BMD(L) onto the summary from the
+dose-response model. The `plot` method just adds vertical lines to the plotted `scam/gam`
+at the BMD and BMDL.
+
 For more detailed access, you can get the actual fitted model using `get_model(mod)`
 and the estimated BMD(L) using `get_bmd(mod)`.
 

@@ -34,13 +34,13 @@ dat <- data.frame(y = rnorm(n,f(xcov)+2*x1-x2,1),x = xcov,x1=x1,x2=x2)
 head(dat)
 ```
 
-    ##          y          x         x1         x2
-    ## 1 5.500323 0.05000000 0.10184548 0.15326083
-    ## 2 6.236828 0.05151515 0.08778823 0.06383406
-    ## 3 4.947664 0.05303030 0.09106139 0.09415035
-    ## 4 4.279017 0.05454545 0.17273698 0.06942820
-    ## 5 2.273126 0.05606061 0.12235470 0.13770802
-    ## 6 3.616912 0.05757576 0.18324410 0.05495769
+    ##          y          x        x1         x2
+    ## 1 5.724611 0.05000000 0.1762715 0.07782521
+    ## 2 6.456920 0.05151515 0.1924181 0.05300267
+    ## 3 5.088898 0.05303030 0.1806373 0.13206722
+    ## 4 4.069977 0.05454545 0.1177952 0.16858532
+    ## 5 2.355033 0.05606061 0.1838956 0.17888210
+    ## 6 3.461417 0.05757576 0.1675616 0.17908829
 
 The exposure variable is `x` and there are two additional variables `x1`
 and `x2` that can be included in the model.
@@ -99,26 +99,26 @@ summary(mod)
     ## 
     ## Parametric coefficients:
     ##             Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)   4.6199     0.5382   8.584 1.62e-13 ***
-    ## x1           -1.5349     2.4776  -0.620    0.537    
-    ## x2           -0.6121     2.4001  -0.255    0.799    
+    ## (Intercept)  4.85909    0.59050   8.229 9.39e-13 ***
+    ## x1           0.03477    2.36978   0.015    0.988    
+    ## x2          -3.74034    2.46862  -1.515    0.133    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Approximate significance of smooth terms:
-    ##      edf Ref.df     F  p-value    
-    ## s(x)   1      1 40.27 5.08e-09 ***
+    ##        edf Ref.df     F  p-value    
+    ## s(x) 1.157  1.288 14.62 8.92e-05 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## R-sq.(adj) =  0.2806   Deviance explained = 30.2%
-    ## GCV score = 1.2043  Scale est. = 1.1561    n = 100
+    ## R-sq.(adj) =  0.2902   Deviance explained = 31.3%
+    ## GCV score = 1.2069  Scale est. = 1.1568    n = 100
     ## 
     ## ---
     ## Benchmark dose summary:
     ## ---
     ##      bmd   bmdl
-    ## 1 0.0744 0.0686
+    ## 1 0.0733 0.0652
     ## ---
 
 ``` r
@@ -126,6 +126,10 @@ plot(mod)
 ```
 
 ![](README_files/figure-gfm/summary_plot-1.png)<!-- -->
+
+The `summary` method just appends the estimated BMD(L) onto the summary
+from the dose-response model. The `plot` method just adds vertical lines
+to the plotted `scam/gam` at the BMD and BMDL.
 
 For more detailed access, you can get the actual fitted model using
 `get_model(mod)` and the estimated BMD(L) using `get_bmd(mod)`.
