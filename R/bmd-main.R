@@ -51,7 +51,7 @@ bounded_newton <- function(g,bounds,eps = 1e-06) {
 #' Default \code{TRUE} uses \code{scam::scam}; setting to \code{FALSE} uses \code{mgcv::gam}.
 #'
 #' @export
-estimate_bmd <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,monotone = TRUE) {
+benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,monotone = TRUE) {
   ## Setup BMD related quantities ##
   A <- stats::qnorm(p0+BMR) - stats::qnorm(p0)
   ## Fit model ##
