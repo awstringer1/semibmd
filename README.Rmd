@@ -60,10 +60,10 @@ have their bases specified manually to be one of the special monotone spline bas
 `?scam::scam` for a list. Here I chose `bs='mpd'` for "monotone p-spline, decreasing", to
 enforce a monotone-decreasing estimated curve.
 
-If you choose `monotone = TRUE` then `scam` is used; I added the option to choose `monotone=FALSE` and fit an ordinary `gam`, based on our discussions.
+If you choose `monotone = TRUE` then `scam` is used; I added the option to choose `monotone=FALSE` and fit an ordinary `gam`, based on our discussions. However, I have not yet tested this feature.
 
 The rest of the arguments are fairly self-explanatory. You have to tell it which
-variable is the exposure variable (that you want the BMD(L) for) using `exposure=`. You
+variable is the exposure variable (that you want the BMD(L) for) using `exposure=...`. You
 can look at `?benchmark_dose` for the full documentation.
 
 ## Get the summaries

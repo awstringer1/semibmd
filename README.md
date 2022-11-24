@@ -34,12 +34,12 @@ head(dat)
 ```
 
     ##          y          x         x1         x2
-    ## 1 5.506282 0.05000000 0.06236956 0.06835036
-    ## 2 6.281823 0.05151515 0.16050408 0.16427097
-    ## 3 5.091625 0.05303030 0.18947553 0.14701731
-    ## 4 4.052942 0.05454545 0.08819965 0.12642886
-    ## 5 2.231356 0.05606061 0.07362378 0.08201649
-    ## 6 3.263570 0.05757576 0.05581902 0.15344948
+    ## 1 5.587826 0.05000000 0.12789151 0.11785006
+    ## 2 6.187403 0.05151515 0.05639754 0.05047859
+    ## 3 5.029313 0.05303030 0.11152082 0.05341947
+    ## 4 4.313252 0.05454545 0.19365742 0.07703448
+    ## 5 2.216798 0.05606061 0.06642940 0.08218576
+    ## 6 3.376902 0.05757576 0.08588071 0.10024173
 
 The exposure variable is `x` and there are two additional variables `x1`
 and `x2` that can be included in the model.
@@ -71,12 +71,12 @@ p-spline, decreasing”, to enforce a monotone-decreasing estimated curve.
 
 If you choose `monotone = TRUE` then `scam` is used; I added the option
 to choose `monotone=FALSE` and fit an ordinary `gam`, based on our
-discussions.
+discussions. However, I have not yet tested this feature.
 
 The rest of the arguments are fairly self-explanatory. You have to tell
 it which variable is the exposure variable (that you want the BMD(L)
-for) using `exposure=`. You can look at `?benchmark_dose` for the full
-documentation.
+for) using `exposure=...`. You can look at `?benchmark_dose` for the
+full documentation.
 
 ## Get the summaries
 
@@ -98,26 +98,26 @@ summary(mod)
     ## 
     ## Parametric coefficients:
     ##             Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)   4.5214     0.5109   8.850 4.38e-14 ***
-    ## x1            0.9539     2.3669   0.403    0.688    
-    ## x2           -3.0072     2.6279  -1.144    0.255    
+    ## (Intercept)   4.3081     0.4825   8.928 2.99e-14 ***
+    ## x1            3.5409     2.4277   1.459    0.148    
+    ## x2           -3.9535     2.4216  -1.633    0.106    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Approximate significance of smooth terms:
     ##      edf Ref.df     F  p-value    
-    ## s(x)   1      1 38.44 1.03e-08 ***
+    ## s(x)   1      1 38.05 1.21e-08 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## R-sq.(adj) =  0.2664   Deviance explained = 28.9%
-    ## GCV score = 1.2206  Scale est. = 1.1717    n = 100
+    ## R-sq.(adj) =  0.2875   Deviance explained = 30.9%
+    ## GCV score = 1.2088  Scale est. = 1.1604    n = 100
     ## 
     ## ---
     ## Benchmark dose summary:
     ## ---
     ##      bmd   bmdl
-    ## 1 0.0755 0.0694
+    ## 1 0.0757 0.0695
     ## ---
 
 ``` r
