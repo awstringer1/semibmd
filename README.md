@@ -1,13 +1,12 @@
 Semi-parametric Benchmark Dosing with semibmd
 ================
 Alex Stringer
-2022-11-23
+2022-11-24
 
 # Install the `semibmd` package
 
-The package is hosted at
-(<https://github.com/awstringer1/semibmd>)\[<https://github.com/awstringer1/semibmd>\].
-It’s currently a private repo so you can’t install using
+The package is hosted at <https://github.com/awstringer1/semibmd>. It’s
+currently a private repo so you can’t install using
 e.g. `remotes::install_github`. Instead, clone the repository to a local
 directory, say `~/work/projects/benchmark-dose/code/semibmd` for
 example, and then in `R` do:
@@ -34,13 +33,13 @@ dat <- data.frame(y = rnorm(n,f(xcov)+2*x1-x2,1),x = xcov,x1=x1,x2=x2)
 head(dat)
 ```
 
-    ##          y          x        x1         x2
-    ## 1 5.724611 0.05000000 0.1762715 0.07782521
-    ## 2 6.456920 0.05151515 0.1924181 0.05300267
-    ## 3 5.088898 0.05303030 0.1806373 0.13206722
-    ## 4 4.069977 0.05454545 0.1177952 0.16858532
-    ## 5 2.355033 0.05606061 0.1838956 0.17888210
-    ## 6 3.461417 0.05757576 0.1675616 0.17908829
+    ##          y          x         x1         x2
+    ## 1 5.506282 0.05000000 0.06236956 0.06835036
+    ## 2 6.281823 0.05151515 0.16050408 0.16427097
+    ## 3 5.091625 0.05303030 0.18947553 0.14701731
+    ## 4 4.052942 0.05454545 0.08819965 0.12642886
+    ## 5 2.231356 0.05606061 0.07362378 0.08201649
+    ## 6 3.263570 0.05757576 0.05581902 0.15344948
 
 The exposure variable is `x` and there are two additional variables `x1`
 and `x2` that can be included in the model.
@@ -99,26 +98,26 @@ summary(mod)
     ## 
     ## Parametric coefficients:
     ##             Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)  4.85909    0.59050   8.229 9.39e-13 ***
-    ## x1           0.03477    2.36978   0.015    0.988    
-    ## x2          -3.74034    2.46862  -1.515    0.133    
+    ## (Intercept)   4.5214     0.5109   8.850 4.38e-14 ***
+    ## x1            0.9539     2.3669   0.403    0.688    
+    ## x2           -3.0072     2.6279  -1.144    0.255    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Approximate significance of smooth terms:
-    ##        edf Ref.df     F  p-value    
-    ## s(x) 1.157  1.288 14.62 8.92e-05 ***
+    ##      edf Ref.df     F  p-value    
+    ## s(x)   1      1 38.44 1.03e-08 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## R-sq.(adj) =  0.2902   Deviance explained = 31.3%
-    ## GCV score = 1.2069  Scale est. = 1.1568    n = 100
+    ## R-sq.(adj) =  0.2664   Deviance explained = 28.9%
+    ## GCV score = 1.2206  Scale est. = 1.1717    n = 100
     ## 
     ## ---
     ## Benchmark dose summary:
     ## ---
     ##      bmd   bmdl
-    ## 1 0.0733 0.0652
+    ## 1 0.0755 0.0694
     ## ---
 
 ``` r

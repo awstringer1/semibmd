@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE,warning=FALSE,message=FALSE)
 
 # Install the `semibmd` package
 
-The package is hosted at (https://github.com/awstringer1/semibmd)[https://github.com/awstringer1/semibmd]. It's currently a private repo so you can't install using e.g. `remotes::install_github`. Instead, clone the repository to a local directory, say
+The package is hosted at https://github.com/awstringer1/semibmd. It's currently a private repo so you can't install using e.g. `remotes::install_github`. Instead, clone the repository to a local directory, say
 `~/work/projects/benchmark-dose/code/semibmd` for example,
 and then in `R` do:
 ```{r install_it}
