@@ -25,8 +25,8 @@ library(semibmd)
 Simulate some data to which the dose-response model is to be fit:
 ```{r simulate_data}
 n <- 100
-f <- function(x) 1/sqrt(x)
-xmin <- .05
+f <- function(x) 1/sqrt(x+.05)
+xmin <- 0
 xmax <- .2
 xcov <- seq(xmin,xmax,length.out=n)
 x1 <- runif(n,xmin,xmax)
@@ -48,7 +48,7 @@ Fit the dose-response model and calculate the benchmark dose information:
 mod <- benchmark_dose(y~s(x,bs='mpd')+x1+x2,
                       data=dat,
                       exposure = 'x',
-                      x0=.05,
+                      x0=0,
                       p0=.05,
                       BMR=.05,
                       monotone = TRUE)
@@ -80,4 +80,24 @@ at the BMD and BMDL.
 
 For more detailed access, you can get the actual fitted model using `get_model(mod)`
 and the estimated BMD(L) using `get_bmd(mod)`.
+
+## Regular non-monotone GAM
+
+We can also fit a regular `gam` by setting `montone = FALSE`. In this case, you change the basis in the formula to be
+something compatible with `mgcv`:
+```{r fitmodelgam}
+mod <- benchmark_dose(y~s(x,bs='bs')+x1+x2, # B-spline
+                      data=dat,
+                      exposure = 'x',
+                      x0=0,
+                      p0=.05,
+                      BMR=.05,
+                      monotone = FALSE)
+```
+
+Summaries and plots are obtained the same way:
+```{r summary_plot}
+summary(mod)
+plot(mod)
+```
 

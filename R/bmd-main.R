@@ -44,7 +44,7 @@ bounded_newton <- function(g,bounds,eps = 1e-06) {
 #' @param formula formula passed to \code{scam::scam} or \code{mgcv::gam}
 #' @param data \code{data.frame} passed to \code{scam::scam} or \code{mgcv::gam}
 #' @param exposure Character vector naming the exposure variable in \code{formula}
-#' @param x0 Baseline exposure
+#' @param x0 Baseline exposure, default \code{0}
 #' @param p0 Baseline response
 #' @param BMR Benchmark response
 #' @param monotone Logical: should a monotone generalized additive model be used as the dose-response model?
@@ -192,6 +192,6 @@ plot.semibmd <- function(x,...) {
   mod <- get_model(x)
   bmd <- get_bmd(x)
   plotinfo <- plot(mod)
-  abline(v = bmd[1],lty='dotdash')
-  abline(v = bmd[2],lty='dotdash')
+  graphics::abline(v = bmd[1],lty='dotdash')
+  graphics::abline(v = bmd[2],lty='dotdash')
 }

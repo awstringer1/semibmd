@@ -21,7 +21,7 @@ benchmark_dose(
 
 \item{exposure}{Character vector naming the exposure variable in \code{formula}}
 
-\item{x0}{Baseline exposure}
+\item{x0}{Baseline exposure, default \code{0}}
 
 \item{p0}{Baseline response}
 
