@@ -4,11 +4,13 @@
 \alias{get_model}
 \title{Get the dose-response model}
 \usage{
-get_model(object)
+get_model(object, ...)
 }
 \arguments{
 \item{object}{Object of class \code{semibmd}
 returned by \code{benchmark_dose}}
+
+\item{...}{Not used}
 }
 \value{
 Object of class \code{scam} or \code{gam} containing the fitted dose-response

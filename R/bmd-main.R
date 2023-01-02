@@ -11,9 +11,10 @@
 #' @param g Function to find the root of. Passed to \code{rlang::as_function}.
 #' @param bounds Numeric vector of length 2 containing lower and upper bounds for where the root is
 #' @param eps Numerical tolerance
+#' @param maxitr Maximum number of iterations. Default is fairly small, since when the problem is bounded it usually converges quickly.
 #'
 #' @details This function solves \code{g(x)=0} for a solution satisfying \code{x>=min(bounds)},
-#' \code{x<=max(bounds)}, and \code{|g(x)|<eps}.
+#' \code{x<=max(bounds)}, and \code{|g(x)|<eps}. It uses numerical derivatives.
 #'
 #' @return A numeric value representing the root.
 #'
@@ -23,16 +24,18 @@
 #' bounded_newton("force",c(-1,1))
 #'
 #' @export
-bounded_newton <- function(g,bounds,eps = 1e-06) {
+bounded_newton <- function(g,bounds,eps = 1e-06,maxitr=10) {
   stopifnot(length(bounds)==2)
   g <- rlang::as_function(g)
   gprime <- function(u) numDeriv::grad(g,u,method = "simple")
   # t <- 0
   xt <- mean(bounds) # Starting value
-  while(abs(g(xt)) > eps) {
+  itr <- 1
+  while(abs(g(xt)) > eps & itr < maxitr) {
     # t <- t+1
     xt <- xt - g(xt)/gprime(xt)
     xt <- reflect(xt,bounds)
+    itr <- itr+1
   }
   xt
 }
@@ -49,18 +52,32 @@ bounded_newton <- function(g,bounds,eps = 1e-06) {
 #' @param BMR Benchmark response
 #' @param monotone Logical: should a monotone generalized additive model be used as the dose-response model?
 #' Default \code{TRUE} uses \code{scam::scam}; setting to \code{FALSE} uses \code{mgcv::gam}.
+#' @param verbose Logical, print progress and diagnostic information for debugging? Default \code{FALSE}.
 #'
 #' @export
-benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,monotone = TRUE) {
+benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,monotone = TRUE,verbose = FALSE) {
+  ## Create output object ##
+  out <- list(
+    info = list(errors = list())
+  )
+  class(out) <- "semibmd"
+
   ## Setup BMD related quantities ##
   A <- stats::qnorm(p0+BMR) - stats::qnorm(p0)
   ## Fit model ##
+  if (verbose) cat("Fitting model...\n")
   if (monotone) {
     mod <- tryCatch(scam::scam(formula=formula,data=data,family = 'gaussian'),error = function(e) e)
   } else {
     mod <- tryCatch(mgcv::gam(formula=formula,data=data,family='gaussian'),error = function(e) e)
   }
-  if (inherits(mod,'condition')) return(mod)
+  if (inherits(mod,'condition')) {
+    if (verbose) cat("Received the following error when fitting model:",mod$message,".\n")
+    out$info$errors['model'] <- mod
+    return(out)
+  }
+  out$model <- mod
+  if (verbose) cat("Finished fitting model.\n")
 
   # scam and gam largely share the same API for prediction etc. For the remainder of the function
   # differences are commented.
@@ -109,22 +126,36 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,monotone = 
   ## Newton ##
   # Get bounds
   xmax <- max(data[ ,exposure])
-  if (U(xmax) < 0) return(simpleError("U(x_max) < 0; bmd estimate does not exist"))
+  if (U(xmax) < 0) {
+    e <- simpleError("U(x_max) < 0; bmd estimate does not exist. Please make a note of it.")
+    if (verbose) cat(bmd_est$message,".\n")
+    out$info$errors['Umax'] <- e
+    return(out)
+  }
   bounds_u <- c(x0,xmax)
 
-  bmd_est <- bounded_newton(U,bounds_u)
+  if (verbose) cat("Running Newton for BMD...\n")
+  bmd_est <- tryCatch(bounded_newton(U,bounds_u),error = function(e) e)
+  if (inherits(bmd_est,'condition')) {
+    if (verbose) cat("Received the following error when estimating BMD:",bmd_est$message,".\n")
+    out$info$errors['bmd'] <- bmd_est
+    return(out)
+  }
+  out$bmd <- bmd_est
+  out$info$Uxb <- U(bmd_est)
+  if (verbose) cat("Finished running Newton for BMD.\n")
 
   bounds_l <- c(x0,bmd_est)
-  bmd_l_est <- bounded_newton(Psi,bounds_l)
+  if (verbose) cat("Running Newton for BMDL...\n")
+  bmd_l_est <- tryCatch(bounded_newton(Psi,bounds_l),error = function(e) e)
+  if (inherits(bmd_l_est,'condition')) {
+    if (verbose) cat("Received the following error when estimating BMD:",bmd_l_est$message,".\n")
+    out$info$errors['bmdl'] <- bmd_l_est
+    return(out)
+  }
+  out$bmdl <- bmd_l_est
+  if (verbose) cat("Finished running Newton for BMD.\n")
 
-  ## Create output object ##
-
-  out <- list(
-    model = mod,
-    bmd = bmd_est,
-    bmdl = bmd_l_est
-  )
-  class(out) <- "semibmd"
   out
 }
 

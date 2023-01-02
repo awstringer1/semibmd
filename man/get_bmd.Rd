@@ -4,11 +4,13 @@
 \alias{get_bmd}
 \title{Get the benchmark dose and lower limit}
 \usage{
-get_bmd(object)
+get_bmd(object, ...)
 }
 \arguments{
 \item{object}{Object of class \code{semibmd}
 returned by \code{benchmark_dose}}
+
+\item{...}{Not used}
 }
 \value{
 Numeric vector of length 2 containing \code{c(bmd,bmdl)}.

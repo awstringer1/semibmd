@@ -1,11 +1,11 @@
 # devtools::load_all()
 # Setup file for semibmd unit tests
-set_parameters <- function(xmin,xmax,sigma=1,p0=.025,BMR=.1) {
+set_parameters <- function(xmin,xmax,x0=.05,sigma=1,p0=.025,BMR=.1) {
   # True function f
   f <- function(x) 1/sqrt(x) # Nonlinear, monotonic, invertible
   finv <- function(x) 1/(x^2) # For calculating true benchmark dose
 
-  x0 <- xmin + (xmax-xmin)*.1 # Reference dose
+  # x0 <- xmin + (xmax-xmin)*.1 # Reference dose
   tau0 <- f(x0) + sigma * qnorm(p0) # Response level
   stopifnot(abs(pnorm(tau0,f(x0),sigma) - p0) < .Machine$double.eps) # Definition of tau
 
@@ -46,7 +46,11 @@ mod1 <- benchmark_dose(y~s(x,bs='mpd'),data=dat,exposure = 'x',x0=.05)
 mod2 <- benchmark_dose(y~s(x,bs='mpd')+x1+x2,data=dat,exposure = 'x',x0=.05)
 mod3 <- tryCatch(benchmark_dose(y~s(x,bs='mpd')+x1+x2,data=dat,exposure = 'x1',x0=.05),error=function(e)e)
 
+mod1v <- benchmark_dose(y~s(x,bs='mpd'),data=dat,exposure = 'x',x0=.05,verbose=TRUE)
+mod2v <- benchmark_dose(y~s(x,bs='mpd')+x1+x2,data=dat,exposure = 'x',x0=.05,verbose=TRUE)
+mod3v <- tryCatch(benchmark_dose(y~s(x,bs='mpd')+x1+x2,data=dat,exposure = 'x1',x0=.05),error=function(e)e,verbose=TRUE)
 
-
-
+mod1g <- benchmark_dose(y~s(x,bs='bs'),data=dat,exposure = 'x',x0=.05,monotone = FALSE)
+mod2g <- benchmark_dose(y~s(x,bs='bs')+x1+x2,data=dat,exposure = 'x',x0=.05,monotone = FALSE)
+mod3g <- tryCatch(benchmark_dose(y~s(x,bs='bs')+x1+x2,data=dat,exposure = 'x1',x0=.05),error=function(e)e,monotone = FALSE)
 

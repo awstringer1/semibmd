@@ -4,7 +4,7 @@
 \alias{bounded_newton}
 \title{Reflected Newton's method}
 \usage{
-bounded_newton(g, bounds, eps = 1e-06)
+bounded_newton(g, bounds, eps = 1e-06, maxitr = 10)
 }
 \arguments{
 \item{g}{Function to find the root of. Passed to \code{rlang::as_function}.}
@@ -12,6 +12,8 @@ bounded_newton(g, bounds, eps = 1e-06)
 \item{bounds}{Numeric vector of length 2 containing lower and upper bounds for where the root is}
 
 \item{eps}{Numerical tolerance}
+
+\item{maxitr}{Maximum number of iterations. Default is fairly small, since when the problem is bounded it usually converges quickly.}
 }
 \value{
 A numeric value representing the root.
@@ -21,7 +23,7 @@ R function implementing Newton's method for root finding with reflection
 }
 \details{
 This function solves \code{g(x)=0} for a solution satisfying \code{x>=min(bounds)},
-\code{x<=max(bounds)}, and \code{|g(x)|<eps}.
+\code{x<=max(bounds)}, and \code{|g(x)|<eps}. It uses numerical derivatives.
 }
 \examples{
 bounded_newton(function(x) x,c(-1,1))

@@ -11,7 +11,8 @@ benchmark_dose(
   x0 = 0,
   p0 = 0.05,
   BMR = 0.05,
-  monotone = TRUE
+  monotone = TRUE,
+  verbose = FALSE
 )
 }
 \arguments{
@@ -29,6 +30,8 @@ benchmark_dose(
 
 \item{monotone}{Logical: should a monotone generalized additive model be used as the dose-response model?
 Default \code{TRUE} uses \code{scam::scam}; setting to \code{FALSE} uses \code{mgcv::gam}.}
+
+\item{verbose}{Logical, print progress and diagnostic information for debugging? Default \code{FALSE}.}
 }
 \description{
 Benchmark dosing based on semi-parametric (monotone) generalized additive models
