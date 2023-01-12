@@ -101,3 +101,55 @@ summary(mod)
 plot(mod)
 ```
 
+# Alternative BMDL Calculation
+
+I have added functionality for computing BMDLs using the delta method and bootstrapping. The argument `BMDL` in the
+call to `benchmark_dose` controls which BMDL(s) is/are calculated; current options are `all` (default), `score` and `delta`.
+Note that the contents of the `bmdl` slot in the output object is never anything other than the `score` BMDL; the `delta` BMDL
+is stored elsewhere and accessed using a getter function, see below.
+
+The argument `boot` controls the number of (parametric) bootstrap iterations, with default `0` meaning don't bootstrap. Like the `delta` BMDL,
+a bootstrapped BMDL will be stored elsewhere in the output object and accessed using a getter.
+
+Here is how to fit it:
+```{r fitmodelallbmdl}
+mod <- benchmark_dose(y~s(x,bs='bs')+x1+x2,
+                      data=dat,
+                      exposure = 'x',
+                      x0=0,
+                      p0=.05,
+                      BMR=.05,
+                      monotone = TRUE,
+                      BMDL = 'all',
+                      boot = 200
+)
+```
+
+The `summary` method still returns just the `score` BMDL. Here are the various getter functions to get everything:
+```{r getters}
+# BMD and score BMDL:
+get_bmd(mod)
+# All BMDLs:
+get_all_bmdl(mod)
+```
+
+# Errors and diagnostics
+
+The `benchmark_dose` function does error checking/handling at each step of the procedure and
+attempts to collate and report the errors in a safe manner. If you get an actual exception thrown
+when using it, let me know what it is and I'll try and add it. You can see what errors were thrown
+with the following:
+```{r geterrors}
+get_errors(mod)
+```
+This should return `FALSE` if no errors were thrown.
+
+You can see diagnostics and approximation quantities too:
+```{r getapprox}
+# Diagnostics: U at estimated BMD and Psi at estimated score BMDL.
+# Both should be zero:
+get_uxb(mod)
+get_psixl(mod)
+# Approximation quantities: variance and derivative of U at BMD (used for delta method)
+get_approximations(mod)
+```

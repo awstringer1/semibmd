@@ -30,7 +30,14 @@ reflect <- function(yt,bounds) {
 #' @return Numeric vector of length 2 containing \code{c(bmd,bmdl)}.
 #'
 #' @export
-get_bmd <- function(object,...) with(object,c(bmd,bmdl))
+get_bmd <- function(object,...) {
+  if (!exists("bmd",object)) stop("No BMD estimated for this object.")
+  out <- object$bmd
+  if (exists("bmdl",object)) {
+    out <- c(out,object$bmdl)
+  }
+  out
+}
 
 #' Get the dose-response model
 #'
@@ -48,10 +55,10 @@ get_bmd <- function(object,...) with(object,c(bmd,bmdl))
 #' @export
 get_model <- function(object,...) object$model
 
-#' Check the estimated BMD
+#' Check the estimated BMD/L
 #'
-#' Check the value of the nonlinear equation defining the estimated benchmark dose
-#' at the estimated benchmark dose. Used for debugging and diagnosing BMD estimation
+#' Check the value of the nonlinear equation defining the estimated benchmark dose (lower)
+#' at the estimated benchmark dose (lower). Used for debugging and diagnosing BMD/L estimation
 #' failure.
 #'
 #' @param object Object of class \code{semibmd}
@@ -60,9 +67,14 @@ get_model <- function(object,...) object$model
 #'
 #' @return Value of the nonlinear equation \code{U(x)} evaluated at \code{x = } estimated benchmark dose.
 #' If the BMD is estimated correctly, this should equal \code{0}.
+#' Similar for \code{Psi}.
 #'
+#' @rdname getuxb
 #' @export
 get_uxb <- function(object,...) object$info$Uxb
+#' @rdname getuxb
+#' @export
+get_psixl <- function(object,...) object$info$Psixl
 
 #' Check for errors in BMD estimation
 #'
@@ -89,6 +101,59 @@ get_errors <- function(object,verbose=FALSE,...) {
         cat("Error in",errornames[i],"estimation:",errors[i]$message,"\n")
       }
     }
+  }
+  out
+}
+
+#' Get all benchmark dose lower limits
+#'
+#' Helper function to extract all BMDL's estimated in an object of class \code{semibmd}
+#' returned by \code{benchmark_dose}.
+#'
+#' @param object Object of class \code{semibmd}
+#' returned by \code{benchmark_dose}
+#' @param ... Not used
+#'
+#' @return Named numeric vector containing the BMDLs. Currently this includes \code{score}
+#' and \code{delta}.
+#'
+#' @export
+get_all_bmdl <- function(object,...) {
+  out <- numeric()
+  if (exists('bmdl',object)) {
+    out[1] <- get_bmd(object)[2]
+    names(out) <- 'score'
+  }
+  if ('delta' %in% names(object$info$bmdl_alternatives)) {
+    out <- c(out,object$info$bmdl_alternatives$delta)
+    names(out) <- c(names(out)[1],'delta')
+  }
+  if ('bootstrap' %in% names(object$info$bmdl_alternatives)) {
+    out <- c(out,object$info$bmdl_alternatives$bootstrap)
+    names(out) <- c(names(out)[1:2],'bootstrap')
+  }
+
+  out
+}
+
+#' Get quantities related to the asymptotic approximations
+#'
+#' Helper function to extract variance and estimated derivative used in the construction
+#' of BMDLs.
+#'
+#' @param object Object of class \code{semibmd}
+#' returned by \code{benchmark_dose}
+#' @param ... Not used
+#'
+#' @return Named numeric vector containing the approximate quantities. Currently this includes \code{Vn} (variance of \code{U(xb)})
+#' and \code{Upn} (derivative of \code{U} at estimated BMD).
+#'
+#' @export
+get_approximations <- function(object,...) {
+  out <- numeric()
+  if ('delta' %in% names(object$info$bmdl_alternatives)) {
+    out <- Reduce(c,object$info$approximations)
+    names(out) <- names(object$info$approximations)
   }
   out
 }

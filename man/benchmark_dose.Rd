@@ -11,8 +11,12 @@ benchmark_dose(
   x0 = 0,
   p0 = 0.05,
   BMR = 0.05,
+  BMDL = c("all", "score", "delta"),
   monotone = TRUE,
-  verbose = FALSE
+  verbose = FALSE,
+  eps = 1e-06,
+  maxitr = 100,
+  boot = 0
 )
 }
 \arguments{
@@ -28,11 +32,26 @@ benchmark_dose(
 
 \item{BMR}{Benchmark response}
 
+\item{BMDL}{character: what kind of BMDL to return? \code{score} gives the score-based inversion lower bound;
+\code{delta} gives the delta method-based lower bound. \code{all} gives all available options.}
+
 \item{monotone}{Logical: should a monotone generalized additive model be used as the dose-response model?
 Default \code{TRUE} uses \code{scam::scam}; setting to \code{FALSE} uses \code{mgcv::gam}.}
 
 \item{verbose}{Logical, print progress and diagnostic information for debugging? Default \code{FALSE}.}
+
+\item{eps}{Numerical tolerance}
+
+\item{maxitr}{Maximum number of iterations. Default is fairly small, since when the problem is bounded it usually converges quickly.}
+
+\item{boot}{Nonegative integer, how many bootstrap iterations to do for the parametric bootstrap BMDL? Default of \code{0}
+means no bootstrapping.}
 }
 \description{
 Benchmark dosing based on semi-parametric (monotone) generalized additive models
+}
+\note{
+The BMDL assigned to the \code{bmdl} output object slot, and accessed via \code{get_bmd()} etc,
+is always the score based one; the others exist only for comparison and diagnostics, and will be included
+in the object's \code{info} slot.
 }

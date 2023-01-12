@@ -54,3 +54,12 @@ mod1g <- benchmark_dose(y~s(x,bs='bs'),data=dat,exposure = 'x',x0=.05,monotone =
 mod2g <- benchmark_dose(y~s(x,bs='bs')+x1+x2,data=dat,exposure = 'x',x0=.05,monotone = FALSE)
 mod3g <- tryCatch(benchmark_dose(y~s(x,bs='bs')+x1+x2,data=dat,exposure = 'x1',x0=.05),error=function(e)e,monotone = FALSE)
 
+
+# Only single BMDL calculation
+mod1_score <- benchmark_dose(y~s(x,bs='mpd'),data=dat,exposure = 'x',x0=.05,BMDL='score')
+mod1_delta <- benchmark_dose(y~s(x,bs='mpd'),data=dat,exposure = 'x',x0=.05,BMDL='delta')
+mod1_none <- benchmark_dose(y~s(x,bs='mpd'),data=dat,exposure = 'x',x0=.05,BMDL='none')
+
+
+# Bootstrapping
+mod1_boot <- benchmark_dose(y~s(x,bs='mpd'),data=dat,exposure = 'x',x0=.05,boot=10)

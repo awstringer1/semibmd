@@ -29,4 +29,33 @@ test_that("benchmark dosing works", {
   expect_lt(abs(get_bmd(mod1)[2] - get_bmd(mod1g)[2]),1e-02)
   expect_lt(abs(get_bmd(mod2)[1] - get_bmd(mod2g)[1]),1e-03)
   expect_lt(abs(get_bmd(mod2)[2] - get_bmd(mod2g)[2]),1e-02)
+
+  # Check BMDL calculation
+  expect_length(mod1$info$bmdl_alternatives,1)
+  expect_length(mod2$info$bmdl_alternatives,1)
+  expect_named(get_all_bmdl(mod1),c('score','delta'))
+  expect_named(get_all_bmdl(mod2),c('score','delta'))
+  expect_type(get_all_bmdl(mod1),'double')
+  expect_type(get_all_bmdl(mod2),'double')
+
+  expect_length(get_bmd(mod1_delta),1)
+  expect_length(get_bmd(mod1_none),1)
+  expect_length(get_bmd(mod1_score),2)
+  expect_equal(get_bmd(mod1)[1],get_bmd(mod1_delta))
+  expect_equal(get_bmd(mod1)[1],get_bmd(mod1_none))
+  expect_equal(get_bmd(mod1)[1],get_bmd(mod1_score)[1])
+
+  expect_length(get_all_bmdl(mod1),2)
+  expect_length(get_all_bmdl(mod1_none),0)
+  expect_length(get_all_bmdl(mod1_score),1)
+  expect_length(get_all_bmdl(mod1_delta),1)
+
+  # With bootstrap
+  expect_length(mod1_boot$info$bmdl_alternatives,2)
+  expect_named(get_all_bmdl(mod1_boot),c('score','delta','bootstrap'))
+  expect_type(get_all_bmdl(mod1_boot),'double')
+  expect_length(get_all_bmdl(mod1_boot),3)
+
+
+
 })

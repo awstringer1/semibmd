@@ -50,15 +50,26 @@ bounded_newton <- function(g,bounds,eps = 1e-06,maxitr=10) {
 #' @param x0 Baseline exposure, default \code{0}
 #' @param p0 Baseline response
 #' @param BMR Benchmark response
+#' @param BMDL character: what kind of BMDL to return? \code{score} gives the score-based inversion lower bound;
+#' \code{delta} gives the delta method-based lower bound. \code{all} gives all available options.
 #' @param monotone Logical: should a monotone generalized additive model be used as the dose-response model?
 #' Default \code{TRUE} uses \code{scam::scam}; setting to \code{FALSE} uses \code{mgcv::gam}.
 #' @param verbose Logical, print progress and diagnostic information for debugging? Default \code{FALSE}.
+#' @inheritParams bounded_newton
+#' @param boot Nonegative integer, how many bootstrap iterations to do for the parametric bootstrap BMDL? Default of \code{0}
+#' means no bootstrapping.
+#'
+#' @note The BMDL assigned to the \code{bmdl} output object slot, and accessed via \code{get_bmd()} etc,
+#' is always the score based one; the others exist only for comparison and diagnostics, and will be included
+#' in the object's \code{info} slot.
 #'
 #' @export
-benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,monotone = TRUE,verbose = FALSE) {
+benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all","score","delta"),monotone = TRUE,verbose = FALSE,eps=1e-06,maxitr=100,boot=0) {
+  BMDL <- BMDL[1]
+
   ## Create output object ##
   out <- list(
-    info = list(errors = list())
+    info = list(errors = list(),bmdl_alternatives = list())
   )
   class(out) <- "semibmd"
 
@@ -73,7 +84,7 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,monotone = 
   }
   if (inherits(mod,'condition')) {
     if (verbose) cat("Received the following error when fitting model:",mod$message,".\n")
-    out$info$errors['model'] <- mod
+    out$info$errors$model <- mod
     return(out)
   }
   out$model <- mod
@@ -126,35 +137,96 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,monotone = 
   ## Newton ##
   # Get bounds
   xmax <- max(data[ ,exposure])
-  if (U(xmax) < 0) {
-    e <- simpleError("U(x_max) < 0; bmd estimate does not exist. Please make a note of it.")
-    if (verbose) cat(bmd_est$message,".\n")
-    out$info$errors['Umax'] <- e
+  check_Umax <- tryCatch(U(xmax),error=function(e)e)
+  if (inherits(check_Umax,'condition')) {
+    if (verbose) cat(check_Umax$message,".\n")
+    out$info$errors$Umax <- check_Umax
+    return(out)
+  }
+  if (check_Umax < 0) {
+    e <- simpleError("Error: U(x_max) < 0; bmd estimate does not exist. Please make a note of it.")
+    if (verbose) cat(e$message,".\n")
+    out$info$errors$Umax <- e
     return(out)
   }
   bounds_u <- c(x0,xmax)
 
   if (verbose) cat("Running Newton for BMD...\n")
-  bmd_est <- tryCatch(bounded_newton(U,bounds_u),error = function(e) e)
+  bmd_est <- tryCatch(bounded_newton(U,bounds_u,eps=eps,maxitr=maxitr),error = function(e) e)
   if (inherits(bmd_est,'condition')) {
     if (verbose) cat("Received the following error when estimating BMD:",bmd_est$message,".\n")
-    out$info$errors['bmd'] <- bmd_est
+    out$info$errors$bmd <- bmd_est
     return(out)
   }
   out$bmd <- bmd_est
   out$info$Uxb <- U(bmd_est)
   if (verbose) cat("Finished running Newton for BMD.\n")
 
-  bounds_l <- c(x0,bmd_est)
-  if (verbose) cat("Running Newton for BMDL...\n")
-  bmd_l_est <- tryCatch(bounded_newton(Psi,bounds_l),error = function(e) e)
-  if (inherits(bmd_l_est,'condition')) {
-    if (verbose) cat("Received the following error when estimating BMD:",bmd_l_est$message,".\n")
-    out$info$errors['bmdl'] <- bmd_l_est
-    return(out)
+  if (BMDL=="none") return(out)
+
+  if (BMDL %in% c("all","score")) {
+    bounds_l <- c(x0,bmd_est)
+    if (verbose) cat("Running Newton for BMDL...\n")
+    bmd_l_est <- tryCatch(bounded_newton(Psi,bounds_l,eps=eps,maxitr=maxitr),error = function(e) e)
+    if (inherits(bmd_l_est,'condition')) {
+      if (verbose) cat("Received the following error when estimating BMD:",bmd_l_est$message,".\n")
+      out$info$errors$bmdl <- bmd_l_est
+      return(out)
+    }
+    out$bmdl <- bmd_l_est
+    out$info$Psixl <- Psi(bmd_l_est)
+    if (verbose) cat("Finished running Newton for BMD.\n")
   }
-  out$bmdl <- bmd_l_est
-  if (verbose) cat("Finished running Newton for BMD.\n")
+
+  if (BMDL %in% c("all","delta")) {
+    tmppredframe <- predframe
+    tmppredframe[ ,exposure] <- bmd_est
+    Bmat_xb <- stats::predict(mod,newdata = tmppredframe,type='lpmatrix')
+    if (monotone) {
+      V <- mod$Vp.t
+    } else {
+      V <- stats::vcov(mod,unconditional = TRUE)
+    }
+    Vn <- (Bmat_x0 - Bmat_xb) %*% V %*% t(Bmat_x0 - Bmat_xb)/ss^2
+    Upn <- abs(numDeriv::grad(U,bmd_est))
+    bmd_l_delta_est <- bmd_est - stats::qnorm(.975)*sqrt(Vn)/Upn
+    out$info$bmdl_alternatives$delta <- bmd_l_delta_est
+    out$info$approximations$Vn <- Vn
+    out$info$approximations$Upn <- Upn
+
+  }
+
+  ## Bootstrapping ##
+  if (boot > 0) {
+    # Generate a new dataset from the fitted model
+    # Calculate the BMD (no BMDL)
+    # Do this "boot" times
+    # Return lower 2.5%ile of these as the bootstrapped BMDL
+
+    bootbmd <- numeric(boot)
+    n <- nrow(data)
+    predmean <- stats::predict(mod,type='response')
+    response_var <- mgcv::interpret.gam(formula)$response
+    if (verbose) cat ("Bootstrapping with B = ",boot," samples...\n",sep="")
+    for (b in 1:boot) {
+      # Generate a new dataset
+      newdat <- data
+      newdat[ ,response_var] <- stats::rnorm(n,predmean,ss)
+      # Fit the model
+      bootmod <- benchmark_dose(
+        formula = formula,
+        data = newdat,
+        exposure = exposure,
+        x0 = x0,p0 = p0,BMR = BMR,
+        BMDL = "none",
+        monotone = monotone,verbose = FALSE,eps = eps,maxitr = maxitr,boot = 0
+      )
+      # Get the bmd
+      bootbmd[b] <- get_bmd(bootmod)[1]
+    }
+    if (verbose) cat("Finished bootstrapping.\n")
+    out$info$bmdl_alternatives$bootstrap <- unname(stats::quantile(bootbmd,.025))
+  }
 
   out
 }

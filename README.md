@@ -1,7 +1,7 @@
 Semi-parametric Benchmark Dosing with semibmd
 ================
 Alex Stringer
-2022-12-01
+2023-01-12
 
 # Install the `semibmd` package
 
@@ -33,13 +33,13 @@ dat <- data.frame(y = rnorm(n,f(xcov)+2*x1-x2,1),x = xcov,x1=x1,x2=x2)
 head(dat)
 ```
 
-    ##          y           x          x1         x2
-    ## 1 5.447067 0.000000000 0.022464586 0.04775524
-    ## 2 6.121333 0.002020202 0.047136631 0.07658592
-    ## 3 4.975874 0.004040404 0.094768557 0.03257909
-    ## 4 4.220285 0.006060606 0.159858918 0.04414642
-    ## 5 2.426425 0.008080808 0.180139377 0.02587626
-    ## 6 3.080528 0.010101010 0.007485305 0.15133159
+    ##          y           x         x1         x2
+    ## 1 5.567913 0.000000000 0.14743287 0.17684554
+    ## 2 6.073063 0.002020202 0.01475311 0.06008934
+    ## 3 5.103770 0.004040404 0.17848509 0.07211622
+    ## 4 3.949342 0.006060606 0.03116702 0.05770544
+    ## 5 2.025384 0.008080808 0.02020776 0.10705371
+    ## 6 3.121305 0.010101010 0.04657504 0.18873361
 
 The exposure variable is `x` and there are two additional variables `x1`
 and `x2` that can be included in the model.
@@ -98,26 +98,26 @@ summary(mod)
     ## 
     ## Parametric coefficients:
     ##             Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)   4.3054     0.3719  11.577   <2e-16 ***
-    ## x1           -1.2043     1.9365  -0.622    0.535    
-    ## x2           -0.5406     1.9079  -0.283    0.778    
+    ## (Intercept)  4.10929    0.54164   7.587 2.15e-11 ***
+    ## x1           2.22784    1.89863   1.173    0.244    
+    ## x2          -0.04648    2.04971  -0.023    0.982    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Approximate significance of smooth terms:
-    ##      edf Ref.df     F  p-value    
-    ## s(x)   1  1.001 42.03 2.57e-09 ***
+    ##        edf Ref.df     F  p-value    
+    ## s(x) 1.459  1.758 12.71 4.35e-05 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## R-sq.(adj) =  0.2875   Deviance explained = 30.9%
-    ## GCV score = 1.2115  Scale est. = 1.163     n = 100
+    ## R-sq.(adj) =  0.302   Deviance explained = 32.6%
+    ## GCV score = 1.2406  Scale est. = 1.1853    n = 100
     ## 
     ## ---
     ## Benchmark dose summary:
     ## ---
     ##      bmd   bmdl
-    ## 1 0.0326 0.0251
+    ## 1 0.0258 0.0143
     ## ---
 
 ``` r
@@ -167,25 +167,25 @@ summary(mod)
     ## 
     ## Parametric coefficients:
     ##             Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)   2.7621     0.2951   9.361 3.51e-15 ***
-    ## x1           -1.2044     1.9365  -0.622    0.535    
-    ## x2           -0.5405     1.9079  -0.283    0.778    
+    ## (Intercept)   2.3323     0.2614   8.923 3.15e-14 ***
+    ## x1            2.2274     1.9011   1.172    0.244    
+    ## x2           -0.0341     2.0511  -0.017    0.987    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Approximate significance of smooth terms:
-    ##      edf Ref.df     F p-value    
-    ## s(x)   1      1 42.05  <2e-16 ***
+    ##        edf Ref.df    F p-value    
+    ## s(x) 1.351  1.621 26.4 2.5e-07 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## R-sq.(adj) =  0.288   Deviance explained = 30.9%
-    ## GCV = 1.2115  Scale est. = 1.163     n = 100
+    ## R-sq.(adj) =  0.301   Deviance explained = 32.5%
+    ## GCV =  1.241  Scale est. = 1.187     n = 100
     ## ---
     ## Benchmark dose summary:
     ## ---
     ##      bmd   bmdl
-    ## 1 0.0326 0.0251
+    ## 1 0.0281 0.0176
     ## ---
 
 ``` r
@@ -193,3 +193,93 @@ plot(mod)
 ```
 
 ![](README_files/figure-gfm/summary_plot_gam-1.png)<!-- -->
+
+# Alternative BMDL Calculation
+
+I have added functionality for computing BMDLs using the delta method
+and bootstrapping. The argument `BMDL` in the call to `benchmark_dose`
+controls which BMDL(s) is/are calculated; current options are `all`
+(default), `score` and `delta`. Note that the contents of the `bmdl`
+slot in the output object is never anything other than the `score` BMDL;
+the `delta` BMDL is stored elsewhere and accessed using a getter
+function, see below.
+
+The argument `boot` controls the number of (parametric) bootstrap
+iterations, with default `0` meaning don’t bootstrap. Like the `delta`
+BMDL, a bootstrapped BMDL will be stored elsewhere in the output object
+and accessed using a getter.
+
+Here is how to fit it:
+
+``` r
+mod <- benchmark_dose(y~s(x,bs='bs')+x1+x2,
+                      data=dat,
+                      exposure = 'x',
+                      x0=0,
+                      p0=.05,
+                      BMR=.05,
+                      monotone = TRUE,
+                      BMDL = 'all',
+                      boot = 200
+)
+```
+
+The `summary` method still returns just the `score` BMDL. Here are the
+various getter functions to get everything:
+
+``` r
+# BMD and score BMDL:
+get_bmd(mod)
+```
+
+    ## [1] 0.02814321 0.01761193
+
+``` r
+# All BMDLs:
+get_all_bmdl(mod)
+```
+
+    ##      score      delta  bootstrap 
+    ## 0.01761193 0.01199496 0.01134902
+
+# Errors and diagnostics
+
+The `benchmark_dose` function does error checking/handling at each step
+of the procedure and attempts to collate and report the errors in a safe
+manner. If you get an actual exception thrown when using it, let me know
+what it is and I’ll try and add it. You can see what errors were thrown
+with the following:
+
+``` r
+get_errors(mod)
+```
+
+    ## [1] FALSE
+
+This should return `FALSE` if no errors were thrown.
+
+You can see diagnostics and approximation quantities too:
+
+``` r
+# Diagnostics: U at estimated BMD and Psi at estimated score BMDL.
+# Both should be zero:
+get_uxb(mod)
+```
+
+    ##           1 
+    ## 1.93638e-08
+
+``` r
+get_psixl(mod)
+```
+
+    ##               1
+    ## 1 -1.010736e-08
+
+``` r
+# Approximation quantities: variance and derivative of U at BMD (used for delta method)
+get_approximations(mod)
+```
+
+    ##          Vn         Upn 
+    ##  0.01095053 12.70106418

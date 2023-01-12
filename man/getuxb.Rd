@@ -2,9 +2,12 @@
 % Please edit documentation in R/helpers.R
 \name{get_uxb}
 \alias{get_uxb}
-\title{Check the estimated BMD}
+\alias{get_psixl}
+\title{Check the estimated BMD/L}
 \usage{
 get_uxb(object, ...)
+
+get_psixl(object, ...)
 }
 \arguments{
 \item{object}{Object of class \code{semibmd}
@@ -15,9 +18,10 @@ returned by \code{benchmark_dose}}
 \value{
 Value of the nonlinear equation \code{U(x)} evaluated at \code{x = } estimated benchmark dose.
 If the BMD is estimated correctly, this should equal \code{0}.
+Similar for \code{Psi}.
 }
 \description{
-Check the value of the nonlinear equation defining the estimated benchmark dose
-at the estimated benchmark dose. Used for debugging and diagnosing BMD estimation
+Check the value of the nonlinear equation defining the estimated benchmark dose (lower)
+at the estimated benchmark dose (lower). Used for debugging and diagnosing BMD/L estimation
 failure.
 }
