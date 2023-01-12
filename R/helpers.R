@@ -157,3 +157,33 @@ get_approximations <- function(object,...) {
   }
   out
 }
+
+#' Get computation times
+#'
+#' Helper function to extract the computation time in seconds for each step of what's
+#' estimated in an object of class \code{semibmd}
+#' returned by \code{benchmark_dose}.
+#'
+#' @param object Object of class \code{semibmd}
+#' returned by \code{benchmark_dose}
+#' @param ... Not used
+#'
+#' @return Named numeric vector containing the computation times in seconds.
+#'
+#' @export
+get_computation_times <- function(object,...) {
+  times <- object$info$computation_time
+  timenames <- names(times)
+  ll <- length(times)
+  if (ll > 0) {
+    out <- numeric(ll)
+    for (i in 1:ll) {
+      out[i] <- times[[i]]
+    }
+    names(out) <- timenames
+    out['total'] <- sum(out)
+    return(out)
+  }
+  numeric()
+}
+

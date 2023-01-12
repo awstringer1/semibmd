@@ -69,7 +69,7 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all
 
   ## Create output object ##
   out <- list(
-    info = list(errors = list(),bmdl_alternatives = list())
+    info = list(errors = list(),bmdl_alternatives = list(),computation_time = list())
   )
   class(out) <- "semibmd"
 
@@ -78,10 +78,15 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all
   ## Fit model ##
   if (verbose) cat("Fitting model...\n")
   if (monotone) {
+    tm <- Sys.time()
     mod <- tryCatch(scam::scam(formula=formula,data=data,family = 'gaussian'),error = function(e) e)
+    dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
   } else {
+    tm <- Sys.time()
     mod <- tryCatch(mgcv::gam(formula=formula,data=data,family='gaussian'),error = function(e) e)
+    dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
   }
+  out$info$computation_time$model <- dt
   if (inherits(mod,'condition')) {
     if (verbose) cat("Received the following error when fitting model:",mod$message,".\n")
     out$info$errors$model <- mod
@@ -152,7 +157,10 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all
   bounds_u <- c(x0,xmax)
 
   if (verbose) cat("Running Newton for BMD...\n")
+  tm <- Sys.time()
   bmd_est <- tryCatch(bounded_newton(U,bounds_u,eps=eps,maxitr=maxitr),error = function(e) e)
+  dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
+  out$info$computation_time$bmd <- dt
   if (inherits(bmd_est,'condition')) {
     if (verbose) cat("Received the following error when estimating BMD:",bmd_est$message,".\n")
     out$info$errors$bmd <- bmd_est
@@ -167,7 +175,10 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all
   if (BMDL %in% c("all","score")) {
     bounds_l <- c(x0,bmd_est)
     if (verbose) cat("Running Newton for BMDL...\n")
+    tm <- Sys.time()
     bmd_l_est <- tryCatch(bounded_newton(Psi,bounds_l,eps=eps,maxitr=maxitr),error = function(e) e)
+    dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
+    out$info$computation_time$bmdl_score <- dt
     if (inherits(bmd_l_est,'condition')) {
       if (verbose) cat("Received the following error when estimating BMD:",bmd_l_est$message,".\n")
       out$info$errors$bmdl <- bmd_l_est
@@ -179,6 +190,7 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all
   }
 
   if (BMDL %in% c("all","delta")) {
+    tm <- Sys.time()
     tmppredframe <- predframe
     tmppredframe[ ,exposure] <- bmd_est
     Bmat_xb <- stats::predict(mod,newdata = tmppredframe,type='lpmatrix')
@@ -190,10 +202,11 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all
     Vn <- (Bmat_x0 - Bmat_xb) %*% V %*% t(Bmat_x0 - Bmat_xb)/ss^2
     Upn <- abs(numDeriv::grad(U,bmd_est))
     bmd_l_delta_est <- bmd_est - stats::qnorm(.975)*sqrt(Vn)/Upn
+    dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
+    out$info$computation_time$bmdl_delta <- dt
     out$info$bmdl_alternatives$delta <- bmd_l_delta_est
     out$info$approximations$Vn <- Vn
     out$info$approximations$Upn <- Upn
-
   }
 
   ## Bootstrapping ##
@@ -208,6 +221,7 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all
     predmean <- stats::predict(mod,type='response')
     response_var <- mgcv::interpret.gam(formula)$response
     if (verbose) cat ("Bootstrapping with B = ",boot," samples...\n",sep="")
+    tm <- Sys.time()
     for (b in 1:boot) {
       # Generate a new dataset
       newdat <- data
@@ -224,6 +238,8 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all
       # Get the bmd
       bootbmd[b] <- get_bmd(bootmod)[1]
     }
+    dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
+    out$info$computation_time$bmdl_boot <- dt
     if (verbose) cat("Finished bootstrapping.\n")
     out$info$bmdl_alternatives$bootstrap <- unname(stats::quantile(bootbmd,.025))
   }

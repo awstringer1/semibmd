@@ -56,6 +56,12 @@ test_that("benchmark dosing works", {
   expect_type(get_all_bmdl(mod1_boot),'double')
   expect_length(get_all_bmdl(mod1_boot),3)
 
-
+  # Computation times
+  expect_named(get_computation_times(mod1),c('model','bmd','bmdl_score','bmdl_delta','total'))
+  expect_named(get_computation_times(mod2),c('model','bmd','bmdl_score','bmdl_delta','total'))
+  expect_length(get_computation_times(mod3),0)
+  expect_named(get_computation_times(mod1_score),c('model','bmd','bmdl_score','total'))
+  expect_named(get_computation_times(mod1_delta),c('model','bmd','bmdl_delta','total'))
+  expect_named(get_computation_times(mod1_none),c('model','bmd','total'))
 
 })

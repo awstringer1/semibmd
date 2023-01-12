@@ -152,4 +152,6 @@ get_uxb(mod)
 get_psixl(mod)
 # Approximation quantities: variance and derivative of U at BMD (used for delta method)
 get_approximations(mod)
+# Computation times of each step
+get_computation_times(mod)
 ```

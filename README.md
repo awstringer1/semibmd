@@ -34,12 +34,12 @@ head(dat)
 ```
 
     ##          y           x         x1         x2
-    ## 1 5.567913 0.000000000 0.14743287 0.17684554
-    ## 2 6.073063 0.002020202 0.01475311 0.06008934
-    ## 3 5.103770 0.004040404 0.17848509 0.07211622
-    ## 4 3.949342 0.006060606 0.03116702 0.05770544
-    ## 5 2.025384 0.008080808 0.02020776 0.10705371
-    ## 6 3.121305 0.010101010 0.04657504 0.18873361
+    ## 1 5.761869 0.000000000 0.19493468 0.07789323
+    ## 2 6.094853 0.002020202 0.04219268 0.09317832
+    ## 3 4.980793 0.004040404 0.13237715 0.10287713
+    ## 4 3.915523 0.006060606 0.05577983 0.14075035
+    ## 5 2.175104 0.008080808 0.12675188 0.17042177
+    ## 6 3.346316 0.010101010 0.11417753 0.09892756
 
 The exposure variable is `x` and there are two additional variables `x1`
 and `x2` that can be included in the model.
@@ -98,26 +98,26 @@ summary(mod)
     ## 
     ## Parametric coefficients:
     ##             Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)  4.10929    0.54164   7.587 2.15e-11 ***
-    ## x1           2.22784    1.89863   1.173    0.244    
-    ## x2          -0.04648    2.04971  -0.023    0.982    
+    ## (Intercept)   4.1920     0.5348   7.838 6.41e-12 ***
+    ## x1            3.1940     2.0581   1.552    0.124    
+    ## x2           -1.4999     1.9450  -0.771    0.443    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Approximate significance of smooth terms:
     ##        edf Ref.df     F  p-value    
-    ## s(x) 1.459  1.758 12.71 4.35e-05 ***
+    ## s(x) 1.451  1.747 13.21 3.24e-05 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## R-sq.(adj) =  0.302   Deviance explained = 32.6%
-    ## GCV score = 1.2406  Scale est. = 1.1853    n = 100
+    ## R-sq.(adj) =  0.291   Deviance explained = 31.6%
+    ## GCV score =  1.239  Scale est. = 1.1839    n = 100
     ## 
     ## ---
     ## Benchmark dose summary:
     ## ---
     ##      bmd   bmdl
-    ## 1 0.0258 0.0143
+    ## 1 0.0253 0.0142
     ## ---
 
 ``` r
@@ -167,25 +167,25 @@ summary(mod)
     ## 
     ## Parametric coefficients:
     ##             Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)   2.3323     0.2614   8.923 3.15e-14 ***
-    ## x1            2.2274     1.9011   1.172    0.244    
-    ## x2           -0.0341     2.0511  -0.017    0.987    
+    ## (Intercept)   2.3869     0.3015   7.917 4.34e-12 ***
+    ## x1            3.1698     2.0580   1.540    0.127    
+    ## x2           -1.5140     1.9480  -0.777    0.439    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Approximate significance of smooth terms:
-    ##        edf Ref.df    F p-value    
-    ## s(x) 1.351  1.621 26.4 2.5e-07 ***
+    ##        edf Ref.df     F  p-value    
+    ## s(x) 1.359  1.634 27.76 1.62e-07 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## R-sq.(adj) =  0.301   Deviance explained = 32.5%
-    ## GCV =  1.241  Scale est. = 1.187     n = 100
+    ## R-sq.(adj) =   0.29   Deviance explained = 31.4%
+    ## GCV = 1.2394  Scale est. = 1.1854    n = 100
     ## ---
     ## Benchmark dose summary:
     ## ---
     ##      bmd   bmdl
-    ## 1 0.0281 0.0176
+    ## 1 0.0274 0.0172
     ## ---
 
 ``` r
@@ -232,7 +232,7 @@ various getter functions to get everything:
 get_bmd(mod)
 ```
 
-    ## [1] 0.02814321 0.01761193
+    ## [1] 0.02741399 0.01718625
 
 ``` r
 # All BMDLs:
@@ -240,7 +240,7 @@ get_all_bmdl(mod)
 ```
 
     ##      score      delta  bootstrap 
-    ## 0.01761193 0.01199496 0.01134902
+    ## 0.01718625 0.01174707 0.01143073
 
 # Errors and diagnostics
 
@@ -266,15 +266,15 @@ You can see diagnostics and approximation quantities too:
 get_uxb(mod)
 ```
 
-    ##           1 
-    ## 1.93638e-08
+    ##            1 
+    ## 2.012383e-08
 
 ``` r
 get_psixl(mod)
 ```
 
-    ##               1
-    ## 1 -1.010736e-08
+    ##              1
+    ## 1 -1.07866e-08
 
 ``` r
 # Approximation quantities: variance and derivative of U at BMD (used for delta method)
@@ -282,4 +282,12 @@ get_approximations(mod)
 ```
 
     ##          Vn         Upn 
-    ##  0.01095053 12.70106418
+    ##  0.01087876 13.04831181
+
+``` r
+# Computation times of each step
+get_computation_times(mod)
+```
+
+    ##       model         bmd  bmdl_score  bmdl_delta   bmdl_boot       total 
+    ## 0.010703087 0.007566929 0.014806986 0.008208990 7.307726860 7.349012852
