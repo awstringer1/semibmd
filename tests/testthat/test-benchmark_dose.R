@@ -56,6 +56,22 @@ test_that("benchmark dosing works", {
   expect_type(get_all_bmdl(mod1_boot),'double')
   expect_length(get_all_bmdl(mod1_boot),3)
 
+  expect_true(all(mod1_boot$info$bootstrapinfo$bootstrapsuccess))
+  expect_equal(unname(get_all_bmdl(mod1_boot)['bootstrap']),unname(quantile(mod1_boot$info$bootstrapinfo$bootstrapvals,.025)))
+
+  expect_length(mod1_bayes$info$bmdl_alternatives,2)
+  expect_named(get_all_bmdl(mod1_bayes),c('score','delta','bmdl_bayes'))
+  expect_type(get_all_bmdl(mod1_bayes),'double')
+  expect_length(get_all_bmdl(mod1_bayes),3)
+
+  expect_true(all(mod1_bayes$info$bootstrapinfo$bayes_boot_vals > 0))
+  expect_equal(unname(get_all_bmdl(mod1_bayes)['bayes_boot']),unname(quantile(mod1_boot$info$bootstrapinfo$bayes_boot_vals,.025)))
+
+  expect_length(mod1_bothboot$info$bmdl_alternatives,3)
+  expect_named(get_all_bmdl(mod1_bothboot),c('score','delta','bootstrap','bmdl_bayes'))
+  expect_type(get_all_bmdl(mod1_bothboot),'double')
+  expect_length(get_all_bmdl(mod1_bothboot),4)
+
   # Computation times
   expect_named(get_computation_times(mod1),c('model','bmd','bmdl_score','bmdl_delta','total'))
   expect_named(get_computation_times(mod2),c('model','bmd','bmdl_score','bmdl_delta','total'))
@@ -63,5 +79,10 @@ test_that("benchmark dosing works", {
   expect_named(get_computation_times(mod1_score),c('model','bmd','bmdl_score','total'))
   expect_named(get_computation_times(mod1_delta),c('model','bmd','bmdl_delta','total'))
   expect_named(get_computation_times(mod1_none),c('model','bmd','total'))
+
+  expect_named(get_computation_times(mod1_boot),c('model','bmd','bmdl_score','bmdl_delta','bmdl_boot','total'))
+  expect_named(get_computation_times(mod1_bayes),c('model','bmd','bmdl_score','bmdl_delta','bmdl_bayes','total'))
+  expect_named(get_computation_times(mod1_bothboot),c('model','bmd','bmdl_score','bmdl_delta','bmdl_boot','bmdl_bayes','total'))
+
 
 })

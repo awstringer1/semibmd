@@ -16,7 +16,8 @@ benchmark_dose(
   verbose = FALSE,
   eps = 1e-06,
   maxitr = 100,
-  boot = 0
+  boot = 0,
+  bayes_boot = 0
 )
 }
 \arguments{
@@ -46,6 +47,11 @@ Default \code{TRUE} uses \code{scam::scam}; setting to \code{FALSE} uses \code{m
 
 \item{boot}{Nonegative integer, how many bootstrap iterations to do for the parametric bootstrap BMDL? Default of \code{0}
 means no bootstrapping.}
+
+\item{bayes_boot}{Nonegative integer, how many Bayesian "bootstrap" iterations to do; means how many posterior draws to base
+sample-based inferences for the BMD(L) off of. This is recommended over the bootstrap as it is many thousands of times faster
+and may (often?) give better results.
+Default of \code{0} means no posterior draws/Bayesian bootstrapping.}
 }
 \description{
 Benchmark dosing based on semi-parametric (monotone) generalized additive models

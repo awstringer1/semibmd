@@ -91,6 +91,7 @@ get_psixl <- function(object,...) object$info$Psixl
 #'
 #' @export
 get_errors <- function(object,verbose=FALSE,...) {
+  if (inherits(object,'condition')) return(TRUE)
   out <- FALSE
   errors <- object$info$errors
   errornames <- names(errors)
@@ -124,15 +125,14 @@ get_all_bmdl <- function(object,...) {
     out[1] <- get_bmd(object)[2]
     names(out) <- 'score'
   }
-  if ('delta' %in% names(object$info$bmdl_alternatives)) {
-    out <- c(out,object$info$bmdl_alternatives$delta)
-    names(out) <- c(names(out)[1],'delta')
+  possible_bmdl <- c('delta','bootstrap','bmdl_bayes')
+  for (j in 1:length(possible_bmdl)) {
+    nm <- possible_bmdl[j]
+    if (nm %in% names(object$info$bmdl_alternatives)) {
+      out <- c(out,object$info$bmdl_alternatives[[nm]])
+      names(out) <- c(names(out)[names(out)!= ""],nm)
+    }
   }
-  if ('bootstrap' %in% names(object$info$bmdl_alternatives)) {
-    out <- c(out,object$info$bmdl_alternatives$bootstrap)
-    names(out) <- c(names(out)[1:2],'bootstrap')
-  }
-
   out
 }
 
@@ -186,4 +186,3 @@ get_computation_times <- function(object,...) {
   }
   numeric()
 }
-

@@ -4,12 +4,14 @@
 \alias{bounded_newton}
 \title{Reflected Newton's method}
 \usage{
-bounded_newton(g, bounds, eps = 1e-06, maxitr = 10)
+bounded_newton(g, bounds, xt = NULL, eps = 1e-06, maxitr = 10)
 }
 \arguments{
 \item{g}{Function to find the root of. Passed to \code{rlang::as_function}.}
 
 \item{bounds}{Numeric vector of length 2 containing lower and upper bounds for where the root is}
+
+\item{xt}{Starting value, numeric, default \code{NULL} sets this to \code{mean(bounds)}.}
 
 \item{eps}{Numerical tolerance}
 

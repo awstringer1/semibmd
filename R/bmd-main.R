@@ -10,6 +10,7 @@
 #'
 #' @param g Function to find the root of. Passed to \code{rlang::as_function}.
 #' @param bounds Numeric vector of length 2 containing lower and upper bounds for where the root is
+#' @param xt Starting value, numeric, default \code{NULL} sets this to \code{mean(bounds)}.
 #' @param eps Numerical tolerance
 #' @param maxitr Maximum number of iterations. Default is fairly small, since when the problem is bounded it usually converges quickly.
 #'
@@ -24,12 +25,14 @@
 #' bounded_newton("force",c(-1,1))
 #'
 #' @export
-bounded_newton <- function(g,bounds,eps = 1e-06,maxitr=10) {
+bounded_newton <- function(g,bounds,xt=NULL,eps = 1e-06,maxitr=10) {
   stopifnot(length(bounds)==2)
   g <- rlang::as_function(g)
   gprime <- function(u) numDeriv::grad(g,u,method = "simple")
   # t <- 0
-  xt <- mean(bounds) # Starting value
+  if (is.null(xt))
+    xt <- mean(bounds) # Starting value
+
   itr <- 1
   while(abs(g(xt)) > eps & itr < maxitr) {
     # t <- t+1
@@ -58,13 +61,18 @@ bounded_newton <- function(g,bounds,eps = 1e-06,maxitr=10) {
 #' @inheritParams bounded_newton
 #' @param boot Nonegative integer, how many bootstrap iterations to do for the parametric bootstrap BMDL? Default of \code{0}
 #' means no bootstrapping.
+#' @param bayes_boot Nonegative integer, how many Bayesian "bootstrap" iterations to do; means how many posterior draws to base
+#' sample-based inferences for the BMD(L) off of. This is recommended over the bootstrap as it is many thousands of times faster
+#' and may (often?) give better results.
+#' Default of \code{0} means no posterior draws/Bayesian bootstrapping.
+#'
 #'
 #' @note The BMDL assigned to the \code{bmdl} output object slot, and accessed via \code{get_bmd()} etc,
 #' is always the score based one; the others exist only for comparison and diagnostics, and will be included
 #' in the object's \code{info} slot.
 #'
 #' @export
-benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all","score","delta"),monotone = TRUE,verbose = FALSE,eps=1e-06,maxitr=100,boot=0) {
+benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all","score","delta"),monotone = TRUE,verbose = FALSE,eps=1e-06,maxitr=100,boot=0,bayes_boot=0) {
   BMDL <- BMDL[1]
 
   ## Create output object ##
@@ -180,13 +188,13 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all
     dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
     out$info$computation_time$bmdl_score <- dt
     if (inherits(bmd_l_est,'condition')) {
-      if (verbose) cat("Received the following error when estimating BMD:",bmd_l_est$message,".\n")
+      if (verbose) cat("Received the following error when estimating BMDL:",bmd_l_est$message,".\n")
       out$info$errors$bmdl <- bmd_l_est
       return(out)
     }
     out$bmdl <- bmd_l_est
     out$info$Psixl <- Psi(bmd_l_est)
-    if (verbose) cat("Finished running Newton for BMD.\n")
+    if (verbose) cat("Finished running Newton for BMDL.\n")
   }
 
   if (BMDL %in% c("all","delta")) {
@@ -217,6 +225,7 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all
     # Return lower 2.5%ile of these as the bootstrapped BMDL
 
     bootbmd <- numeric(boot)
+    bootsuccess <- logical(boot)
     n <- nrow(data)
     predmean <- stats::predict(mod,type='response')
     response_var <- mgcv::interpret.gam(formula)$response
@@ -236,14 +245,63 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all
         monotone = monotone,verbose = FALSE,eps = eps,maxitr = maxitr,boot = 0
       )
       # Get the bmd
-      bootbmd[b] <- get_bmd(bootmod)[1]
+      tmpbmd <- tryCatch(get_bmd(bootmod)[1],error = function(e) e )
+      if (inherits(tmpbmd,'condition')) {
+        bootsuccess[b] <- FALSE
+      } else {
+        bootsuccess[b] <- TRUE
+        bootbmd[b] <- tmpbmd
+      }
     }
     dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
     out$info$computation_time$bmdl_boot <- dt
     if (verbose) cat("Finished bootstrapping.\n")
-    out$info$bmdl_alternatives$bootstrap <- unname(stats::quantile(bootbmd,.025))
+    out$info$bootstrapinfo$bootstrapsuccess <- bootsuccess
+    out$info$bootstrapinfo$bootstrapvals <- bootbmd
+    out$info$bmdl_alternatives$bootstrap <- unname(stats::quantile(bootbmd[bootsuccess],.025))
   }
 
+  ## Bayesian "bootstrapping" ##
+  if (bayes_boot > 0) {
+    tm <- Sys.time()
+    # Algorithm differs for monotone vs non-monotone
+    if (monotone) {
+      # Sample from the posterior of BETA, not gamma
+      Vb <- mod$Vp
+      betaest <- mod$coefficients # Note: DIFFERENT scale than my custom code
+      d <- length(betaest)
+      # Sample bayes_boot samples from a Gaussian with these parameters
+      samps <- t(sweep(t(chol(Vb)) %*% matrix(stats::rnorm(bayes_boot * d),d,bayes_boot),1,betaest,'+'))
+      # Transform to gamma scale
+      samps[ ,2:d] <- exp(samps[ ,2:d])
+      # Get the bmd samples
+      bmd_bayes_samps <- numeric(bayes_boot)
+      for (b in 1:bayes_boot) {
+        Utmp <- function(x) {
+          tmppredframe <- rbind(predframe,predframe)
+          tmppredframe[2,exposure] <- x
+          preds <- stats::predict(mod,newdata = tmppredframe,type='lpmatrix') %*% samps[b, ]
+          (1/ss)*(preds[1] - preds[2]) - A
+        }
+        tmp <- tryCatch(bounded_newton(Utmp,bounds_u,xt=bmd_est,eps=eps,maxitr=maxitr),error = function(e) e)
+        if (inherits(tmp,'condition')) {
+          bmd_bayes_samps[b] <- x0-1
+        } else {
+          bmd_bayes_samps[b] <- tmp
+        }
+      }
+    } else {
+      # TODO
+      Vb <- stats::vcov(mod,unconditional = TRUE)
+      stop("Error: bayes_boot not yet implemented for non-monotone smooths.")
+    }
+    dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
+    out$info$computation_time$bmdl_bayes <- dt
+    bayes_boot_success <- bmd_bayes_samps > x0-1/2 # Just pick a value it can't be
+    bmd_bayes_samps <- bmd_bayes_samps[bayes_boot_success]
+    out$info$bootstrapinfo$bayes_boot_vals <- bmd_bayes_samps
+    out$info$bmdl_alternatives$bmdl_bayes <- unname(stats::quantile(bmd_bayes_samps,.025))
+  }
   out
 }
 

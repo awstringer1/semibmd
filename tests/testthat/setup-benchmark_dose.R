@@ -42,6 +42,21 @@ set.seed(3798)
 dat <- simulate_data(100,params)
 
 ## Benchmark dosing ##
+# formula <- y~s(x,bs='mpd')
+# data <- dat
+# exposure <- 'x'
+# x0 <- .05
+# p0 <- .05
+# BMR <- .05
+# BMDL = c("all", "score", "delta")
+# monotone = TRUE
+# verbose = TRUE
+# eps = 1e-06
+# maxitr = 100
+# boot <- 0
+# bayes_boot <- 1000
+
+
 mod1 <- benchmark_dose(y~s(x,bs='mpd'),data=dat,exposure = 'x',x0=.05)
 mod2 <- benchmark_dose(y~s(x,bs='mpd')+x1+x2,data=dat,exposure = 'x',x0=.05)
 mod3 <- tryCatch(benchmark_dose(y~s(x,bs='mpd')+x1+x2,data=dat,exposure = 'x1',x0=.05),error=function(e)e)
@@ -63,3 +78,8 @@ mod1_none <- benchmark_dose(y~s(x,bs='mpd'),data=dat,exposure = 'x',x0=.05,BMDL=
 
 # Bootstrapping
 mod1_boot <- benchmark_dose(y~s(x,bs='mpd'),data=dat,exposure = 'x',x0=.05,boot=10)
+
+
+# Bayesian bootstrapping
+mod1_bayes <- benchmark_dose(y~s(x,bs='mpd'),data=dat,exposure = 'x',x0=.05,bayes_boot=100)
+mod1_bothboot <- benchmark_dose(y~s(x,bs='mpd'),data=dat,exposure = 'x',x0=.05,boot=10,bayes_boot=100)
