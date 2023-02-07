@@ -24,10 +24,10 @@ library(semibmd)
 
 Simulate some data to which the dose-response model is to be fit:
 ```{r simulate_data}
-n <- 100
-f <- function(x) 1/sqrt(x+.05)
+n <- 1000
+f <- function(x) exp(-5*x)
 xmin <- 0
-xmax <- .2
+xmax <- 1
 xcov <- seq(xmin,xmax,length.out=n)
 x1 <- runif(n,xmin,xmax)
 x2 <- runif(n,xmin,xmax)

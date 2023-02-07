@@ -186,3 +186,30 @@ get_computation_times <- function(object,...) {
   }
   numeric()
 }
+
+# Sampling-based intervals
+# Not exported.
+get_samples <- function(beta,alpha,H,tmbdata,M=1000) {
+  # beta: coefficients
+  # alpha: intercept
+  # H: full joint hessian
+  # M: number of samples to return
+  # Returns a d x M matrix of samples, where d = dim(H)
+  Hchol <- Matrix::Cholesky(H,LDL=FALSE,perm=FALSE)
+  p <- ncol(H)
+  d <- length(beta)
+  Z <- matrix(stats::rnorm(p*M),p,M)
+  Z <- Matrix::solve(Hchol,Z,system="Lt")
+  betasamps <- tmbdata$U %*% Z[1:d, ]
+  betasamps <- sweep(betasamps,1,beta,'+')
+  gammasamps <- apply(betasamps,2,get_gamma)
+  alphasamps <- Z[d+1, ] + alpha
+  fitted_samps <- tmbdata$X %*% gammasamps
+  colmeans <- colMeans(fitted_samps)
+  fitted_samps <- sweep(fitted_samps,2,colmeans,"-")
+  fitted_samps <- sweep(fitted_samps,2,alphasamps,"+")
+  list(beta = betasamps,fitted=fitted_samps)
+}
+
+
+

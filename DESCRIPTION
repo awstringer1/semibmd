@@ -9,7 +9,7 @@ Description: Benchmark dosing estimates and quantifies uncertainty in the level 
     This package fits a dose-response model using monotone generalized additive models
     (from the "scam" package) and returns and estimate of and lower endpoint of a 95% confidence
     set for the benchmark dose.
-License: MIT + file LICENSE
+License: GPL (>= 3) + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.2
@@ -19,7 +19,16 @@ Imports:
     rlang,
     scam,
     graphics,
-    stats
+    stats,
+    Rcpp,
+    RcppEigen,
+    Matrix,
+    TMB (>= 1.9.2),
+    methods
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+LinkingTo: 
+    Rcpp,
+    RcppEigen,
+    TMB

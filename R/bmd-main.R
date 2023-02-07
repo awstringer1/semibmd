@@ -276,6 +276,7 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all
       samps[ ,2:d] <- exp(samps[ ,2:d])
       # Get the bmd samples
       bmd_bayes_samps <- numeric(bayes_boot)
+      if (verbose) cat("Doing Bayesian Bootstrapping...\n")
       for (b in 1:bayes_boot) {
         Utmp <- function(x) {
           tmppredframe <- rbind(predframe,predframe)
@@ -290,6 +291,7 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all
           bmd_bayes_samps[b] <- tmp
         }
       }
+      if (verbose) cat("Done Bayesian Bootstrapping.\n")
     } else {
       # TODO
       Vb <- stats::vcov(mod,unconditional = TRUE)
