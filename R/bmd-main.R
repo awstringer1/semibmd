@@ -328,7 +328,11 @@ benchmark_dose <- function(formula,data,exposure,x0=0,p0=.05,BMR=.05,BMDL=c("all
 #' @export
 summary.semibmd <- function(object,...) {
   modsummary <- list()
-  modsummary$modelsummary <- summary(object$model)
+  if (inherits(object$model,c('scam','gam'))) {
+    modsummary$modelsummary <- summary(object$model)
+  } else {
+    modsummary$modelsummary <- "Monotone Additive Model fit using Laplace-Approximate Marginal Likelihood in TMB"
+  }
   thebmd <- get_bmd(object)
   modsummary$bmd <- thebmd[1]
   modsummary$bmdl <- thebmd[2]
@@ -370,7 +374,7 @@ print.summary.semibmd <- function(x,digits = 4,...) {
 plot.semibmd <- function(x,...) {
   mod <- get_model(x)
   bmd <- get_bmd(x)
-  if (inherits(mod,'gam')) {
+  if (inherits(mod,c('scam','gam'))) {
     plotinfo <- plot(mod)
     graphics::abline(v = bmd[1],lty='longdash')
     graphics::abline(v = bmd[2],lty='dotdash')
