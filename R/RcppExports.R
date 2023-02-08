@@ -29,6 +29,10 @@ Uxd_cpp <- function(x, beta, knots, k, sigmaest) {
     .Call(`_semibmd_Uxd_cpp`, x, beta, knots, k, sigmaest)
 }
 
+Vx_cpp <- function(x, Vbeta, knots, k, x0, sigmaest) {
+    .Call(`_semibmd_Vx_cpp`, x, Vbeta, knots, k, x0, sigmaest)
+}
+
 get_bmd_cpp <- function(beta, knots, bounds, x0, sigmaest, A, eps, maxitr) {
     .Call(`_semibmd_get_bmd_cpp`, beta, knots, bounds, x0, sigmaest, A, eps, maxitr)
 }

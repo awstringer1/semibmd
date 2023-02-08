@@ -110,6 +110,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// Vx_cpp
+double Vx_cpp(double x, Eigen::MatrixXd Vbeta, Eigen::VectorXd knots, int k, double x0, double sigmaest);
+RcppExport SEXP _semibmd_Vx_cpp(SEXP xSEXP, SEXP VbetaSEXP, SEXP knotsSEXP, SEXP kSEXP, SEXP x0SEXP, SEXP sigmaestSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type Vbeta(VbetaSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type knots(knotsSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< double >::type x0(x0SEXP);
+    Rcpp::traits::input_parameter< double >::type sigmaest(sigmaestSEXP);
+    rcpp_result_gen = Rcpp::wrap(Vx_cpp(x, Vbeta, knots, k, x0, sigmaest));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_bmd_cpp
 double get_bmd_cpp(Eigen::VectorXd beta, Eigen::VectorXd knots, Eigen::VectorXd bounds, double x0, double sigmaest, double A, double eps, int maxitr);
 RcppExport SEXP _semibmd_get_bmd_cpp(SEXP betaSEXP, SEXP knotsSEXP, SEXP boundsSEXP, SEXP x0SEXP, SEXP sigmaestSEXP, SEXP ASEXP, SEXP epsSEXP, SEXP maxitrSEXP) {
@@ -137,6 +153,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_semibmd_get_gamma", (DL_FUNC) &_semibmd_get_gamma, 1},
     {"_semibmd_Ux_cpp", (DL_FUNC) &_semibmd_Ux_cpp, 7},
     {"_semibmd_Uxd_cpp", (DL_FUNC) &_semibmd_Uxd_cpp, 5},
+    {"_semibmd_Vx_cpp", (DL_FUNC) &_semibmd_Vx_cpp, 6},
     {"_semibmd_get_bmd_cpp", (DL_FUNC) &_semibmd_get_bmd_cpp, 8},
     {NULL, NULL, 0}
 };

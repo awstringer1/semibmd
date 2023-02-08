@@ -82,6 +82,21 @@ double Uxd_cpp(double x,Eigen::VectorXd beta,Eigen::VectorXd knots,int k,double 
   return -fxbp/sigmaest;
 }
 
+// Variance of U(x)
+// [[Rcpp::export]]
+double Vx_cpp(double x,Eigen::MatrixXd Vbeta,Eigen::VectorXd knots,int k,double x0,double sigmaest) {
+  // Cholesky of Vbeta
+  Eigen::MatrixXd L(Vbeta.llt().matrixL());
+  // std::cout << L << std::endl << std::endl;
+
+  int d=L.cols();
+  Eigen::VectorXd coldeboor(d);
+  for (int i=0;i<d;i++)
+    coldeboor(i) = deBoor(x,k,knots,L.col(i),4);
+
+  return 0.;
+}
+
 // [[Rcpp::export]]
 double get_bmd_cpp(Eigen::VectorXd beta,Eigen::VectorXd knots,Eigen::VectorXd bounds,double x0,double sigmaest,double A,double eps,int maxitr) {
   // Setup initial quantities

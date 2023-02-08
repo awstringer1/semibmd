@@ -37,6 +37,7 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
   )
   class(out) <- "semibmd"
 
+  tm <- Sys.time()
   ## Setup BMD related quantities ##
   A <- stats::qnorm(p0+BMR) - stats::qnorm(p0)
 
@@ -153,16 +154,23 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
   hyperidx <- (paramdimrandom+1):(paramdimfull)
   randprec <- fullprec[randomidx,randomidx]
 
+  dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
+  out$info$computation_time$model <- dt
+
+  tm <- Sys.time()
   samps <- tryCatch(get_samples(betaest,alphaest,randprec,tmbdata,M=bayes_boot),error = function(e) e)
   if (inherits(samps,'condition')) {
     if (verbose) cat("Received the following error when drawing posterior samples:",samps$message,".\n")
     out$info$errors$posteriorsamples <- samps
     return(out)
   }
+  dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
+  out$info$computation_time$posterior_samples <- dt
 
   # Posterior of BMD
   xmax <- max(data[[exposure]])
   bmd_samps <- numeric(ncol(samps$beta))
+  tm <- Sys.time()
   for (b in 1:ncol(samps$beta)) {
     tmp <- tryCatch(get_bmd_cpp(samps$beta[ ,b],tmbdata$smoothobj$knots,c(x0,xmax),x0,sigmaest,A,1e-06,100),error = function(e) e)
     if (inherits(tmp,'condition')) {
@@ -173,19 +181,27 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
   }
   bmd_samp_errors <- sum(bmd_samps == -1)
   bmd_samps_clean <- bmd_samps[bmd_samps > -1]
+  out$info$bmd_samps <- bmd_samps
+  dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
+  out$info$computation_time$bmd_samples <- dt
 
-  bmd_est <- tryCatch(stats::median(bmd_samps_clean),error = function(e) e)
+  tm <- Sys.time()
+  bmd_est <- tryCatch(get_bmd_cpp(betaest,tmbdata$smoothobj$knots,c(x0,xmax),x0,sigmaest,A,1e-06,100),error = function(e) e)
   if (inherits(bmd_est,'condition')) {
     if (verbose) cat("Received the following error when estimating BMD:",samp_upper$bmd_est,".\n")
     out$info$errors$bmd_est <- bmd_est
     return(out)
   }
   out$bmd <- bmd_est
+  dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
+  out$info$computation_time$bmd_estimate <- dt
 
-  bmdl_est <- tryCatch(stats::quantile(bmd_samps_clean,probs=.025),error = function(e) e)
-  if (inherits(bmdl_est,'condition')) {
-    if (verbose) cat("Received the following error when computing BMDL:",bmdl_est$message,".\n")
-    out$info$errors$lower_quantiles <- bmdl_est
+  ## BMDL several ways ##
+
+  bmdl_est_bayesboot <- tryCatch(stats::quantile(bmd_samps_clean,probs=.025),error = function(e) e)
+  if (inherits(bmdl_est_bayesboot,'condition')) {
+    if (verbose) cat("Received the following error when computing BMDL:",bmdl_est_bayesboot$message,".\n")
+    out$info$errors$lower_quantiles <- bmdl_est_bayesboot
     out$info$bmd_samps <- bmd_samps
     out$info$bmd_samps_clean <- bmd_samps_clean
     out$info$samps <- samps # Return stuff if there was an error in them
@@ -195,10 +211,15 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
     out$info$tmbdata <- tmbdata
     return(out)
   }
-  out$bmdl <- bmdl_est
+  out$info$bmdl_alternatives$bmdl_bayes <- bmdl_est_bayesboot
 
-  # TODO: add in plot and summary information about the dose-response model
+  ## TODO: score and delta
+  ## variance: just compute the B-spline vectors directly, not worth it
+  ## to do deBoors. Can also compute derivatives using the same recursions.
+  ##
+
   # Plot information
+  tm <- Sys.time()
   xx <- seq(min(data[[exposure]]),max(data[[exposure]]),length.out=1e03)
   preddat <- data.frame(x=xx)
   colnames(preddat) <- exposure
@@ -249,9 +270,11 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
       lower = samp_lower,
       upper = samp_upper,
       bmd = bmd_est,
-      bmdl = bmdl_est
+      bmdl = bmdl_est_bayesboot
     )
   )
+  dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
+  out$info$computation_time$plot_information <- dt
 
   out
 }
