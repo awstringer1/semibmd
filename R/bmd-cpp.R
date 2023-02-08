@@ -159,31 +159,8 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
     out$info$errors$posteriorsamples <- samps
     return(out)
   }
-  # Get empirical coverage of samples
-  # Compute upper and lower quantiles
-  samp_lower <- tryCatch(apply(samps$fitted,1,stats::quantile,probs=.025),error = function(e) e)
-  samp_upper <- tryCatch(apply(samps$fitted,1,stats::quantile,probs=.975),error = function(e) e)
-  if (inherits(samp_lower,'condition')) {
-    if (verbose) cat("Received the following error when computing lower quantiles:",samp_lower$message,".\n")
-    out$info$errors$lower_quantiles <- samp_lower
-    out$info$samps <- samps # Return stuff if there was an error in them
-    out$info$betaest <- betaest
-    out$info$alphaest <- alphaest
-    out$info$randprec <- randprec
-    out$info$tmbdata <- tmbdata
-    return(out)
-  }
-  if (inherits(samp_upper,'condition')) {
-    if (verbose) cat("Received the following error when computing upper quantiles:",samp_upper$message,".\n")
-    out$info$errors$lower_quantiles <- samp_upper
-    out$info$samps <- samps # Return stuff if there was an error in them
-    out$info$betaest <- betaest
-    out$info$alphaest <- alphaest
-    out$info$randprec <- randprec
-    out$info$tmbdata <- tmbdata
-    return(out)
-  }
 
+  # Posterior of BMD
   xmax <- max(data[[exposure]])
   bmd_samps <- numeric(ncol(samps$beta))
   for (b in 1:ncol(samps$beta)) {
@@ -221,6 +198,60 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
   out$bmdl <- bmdl_est
 
   # TODO: add in plot and summary information about the dose-response model
+  # Plot information
+  xx <- seq(min(data[[exposure]]),max(data[[exposure]]),length.out=1e03)
+  preddat <- data.frame(x=xx)
+  colnames(preddat) <- exposure
+  XX <- mgcv::PredictMat(monosmoothobj,preddat)
+  gammasamps <- apply(samps$beta,2,get_gamma)
+  fitted <- XX %*% gammasamps
+  colmeans <- colMeans(fitted)
+  fitted <- sweep(fitted,2,colmeans,"-")
+  fitted <- sweep(fitted,2,samps$alpha,"+")
+  samp_lower <- tryCatch(apply(fitted,1,stats::quantile,probs=.025),error = function(e) e)
+  samp_upper <- tryCatch(apply(fitted,1,stats::quantile,probs=.975),error = function(e) e)
+  samp_median <- tryCatch(apply(fitted,1,stats::median),error = function(e) e)
+  if (inherits(samp_lower,'condition')) {
+    if (verbose) cat("Received the following error when computing lower quantiles:",samp_lower$message,".\n")
+    out$info$errors$lower_quantiles <- samp_lower
+    out$info$samps <- samps # Return stuff if there was an error in them
+    out$info$betaest <- betaest
+    out$info$alphaest <- alphaest
+    out$info$randprec <- randprec
+    out$info$tmbdata <- tmbdata
+    return(out)
+  }
+  if (inherits(samp_upper,'condition')) {
+    if (verbose) cat("Received the following error when computing upper quantiles:",samp_upper$message,".\n")
+    out$info$errors$lower_quantiles <- samp_upper
+    out$info$samps <- samps # Return stuff if there was an error in them
+    out$info$betaest <- betaest
+    out$info$alphaest <- alphaest
+    out$info$randprec <- randprec
+    out$info$tmbdata <- tmbdata
+    return(out)
+  }
+  if (inherits(samp_median,'condition')) {
+    if (verbose) cat("Received the following error when computing upper quantiles:",samp_median$message,".\n")
+    out$info$errors$median <- samp_median
+    out$info$samps <- samps # Return stuff if there was an error in them
+    out$info$betaest <- betaest
+    out$info$alphaest <- alphaest
+    out$info$randprec <- randprec
+    out$info$tmbdata <- tmbdata
+    return(out)
+  }
+
+  out$model <- list(
+    plotinfo = list(
+      x = xx,
+      estimate = samp_median,
+      lower = samp_lower,
+      upper = samp_upper,
+      bmd = bmd_est,
+      bmdl = bmdl_est
+    )
+  )
 
   out
 }

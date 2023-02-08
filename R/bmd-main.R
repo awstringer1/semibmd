@@ -370,7 +370,15 @@ print.summary.semibmd <- function(x,digits = 4,...) {
 plot.semibmd <- function(x,...) {
   mod <- get_model(x)
   bmd <- get_bmd(x)
-  plotinfo <- plot(mod)
-  graphics::abline(v = bmd[1],lty='dotdash')
-  graphics::abline(v = bmd[2],lty='dotdash')
+  if (inherits(mod,'gam')) {
+    plotinfo <- plot(mod)
+    graphics::abline(v = bmd[1],lty='longdash')
+    graphics::abline(v = bmd[2],lty='dotdash')
+  } else {
+    with(mod$plotinfo,plot(x,estimate,type='l',xlim = range(x),ylim = c(min(lower),max(upper))))
+    with(mod$plotinfo,graphics::lines(x,lower,lty='dashed'))
+    with(mod$plotinfo,graphics::lines(x,upper,lty='dashed'))
+    graphics::abline(v = bmd[1],lty='longdash')
+    graphics::abline(v = bmd[2],lty='dotdash')
+  }
 }

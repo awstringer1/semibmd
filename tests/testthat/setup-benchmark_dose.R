@@ -125,8 +125,13 @@ set_parameters_mono <- function(scale=1,sigma=1,p0=GLOBAL_P0,BMR=.025,plot_it=FA
   }
 }
 
+simulate_data_mono <- function(n,params) {
+  xcov <- with(params,seq(xmin,xmax,length.out=n))
+  with(params,data.frame(y = rnorm(n,f(xcov),sigma),x = xcov))
+}
+
 params2 <- set_parameters_mono(scale=1,sigma=.5,p0=.01,BMR=.01,knots=10)
-dat2 <- simulate_data(500,params2)
+dat2 <- simulate_data_mono(500,params2)
 
 mod1_tmb <- benchmark_dose_tmb(
   monosmooths = list(s(x,bs='bs')),
@@ -146,7 +151,7 @@ mod1_tmb <- benchmark_dose_tmb(
 monosmooths <- list(s(x,bs='bs'))
 smooths <- NULL
 params2 <- set_parameters_mono(scale=1,sigma=.5,p0=.01,BMR=.01,knots=10)
-data <- simulate_data(500,params2)
+data <- simulate_data_mono(500,params2)
 exposure <- 'x'
 response <- 'y'
 x0 <- 0

@@ -53,7 +53,8 @@ get_bmd <- function(object,...) {
 #' model used to compute the bmd(l).
 #'
 #' @export
-get_model <- function(object,...) object$model
+get_model <- function(object,...)
+  mod <- object$model
 
 #' Check the estimated BMD/L
 #'
@@ -202,13 +203,13 @@ get_samples <- function(beta,alpha,H,tmbdata,M=1000) {
   Z <- Matrix::solve(Hchol,Z,system="Lt")
   betasamps <- tmbdata$U %*% Z[1:d, ]
   betasamps <- sweep(betasamps,1,beta,'+')
-  gammasamps <- apply(betasamps,2,get_gamma)
+  # gammasamps <- apply(betasamps,2,get_gamma)
   alphasamps <- Z[d+1, ] + alpha
-  fitted_samps <- tmbdata$X %*% gammasamps
-  colmeans <- colMeans(fitted_samps)
-  fitted_samps <- sweep(fitted_samps,2,colmeans,"-")
-  fitted_samps <- sweep(fitted_samps,2,alphasamps,"+")
-  list(beta = betasamps,fitted=fitted_samps)
+  # fitted_samps <- tmbdata$X %*% gammasamps
+  # colmeans <- colMeans(fitted_samps)
+  # fitted_samps <- sweep(fitted_samps,2,colmeans,"-")
+  # fitted_samps <- sweep(fitted_samps,2,alphasamps,"+")
+  list(beta = betasamps,alpha=alphasamps)
 }
 
 
