@@ -361,6 +361,7 @@ print.summary.semibmd <- function(x,digits = 4,...) {
 #' computed by \code{benchmark_dose} and \code{summary.semibmd}.
 #'
 #' @param x Object of class \code{semibmd} returned by \code{semibmd::benchmark_dose}.
+#' @param plot Logical, plots the model if \code{TRUE} (default) otherwise returns the plot data for further use.
 #' @param ... Not used.
 #'
 #' @details This function first calls \code{summary.semibmd}, then calls \code{plot.scam/gam}
@@ -371,7 +372,7 @@ print.summary.semibmd <- function(x,digits = 4,...) {
 #' @rdname plot.semibmd
 #'
 #' @export
-plot.semibmd <- function(x,...) {
+plot.semibmd <- function(x,plot=FALSE,...) {
   mod <- get_model(x)
   bmd <- get_bmd(x)
   if (inherits(mod,c('scam','gam'))) {
@@ -391,6 +392,14 @@ plot.semibmd <- function(x,...) {
     samp_lower <- tryCatch(apply(fitted,1,stats::quantile,probs=.025),error = function(e) e)
     samp_upper <- tryCatch(apply(fitted,1,stats::quantile,probs=.975),error = function(e) e)
     samp_median <- tryCatch(apply(fitted,1,stats::median),error = function(e) e)
+
+    if (!plot) return(list(
+      x = xx,
+      fitted = fitted,
+      estimate = samp_median,
+      lower = samp_lower,
+      upper = samp_upper
+    ))
 
     # Spaghetti plot
     plot(xx,fitted[ ,1],type='l',col=scales::alpha('lightgrey',0.2),xlim = range(xx),ylim = c(min(samp_lower),max(samp_upper)))

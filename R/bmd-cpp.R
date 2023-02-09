@@ -183,7 +183,7 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
     }
   }
   bmd_samp_errors <- sum(bmd_samps == -1)
-  bmd_samps_clean <- bmd_samps[bmd_samps > -1]
+  bmd_samps_clean <- bmd_samps[bmd_samps > -1 & !is.na(bmd_samps) & !is.nan(bmd_samps)]
   out$info$bmd_samps <- bmd_samps
   dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
   out$info$computation_time$bmd_samples <- dt
@@ -193,6 +193,8 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
   if (inherits(bmd_est,'condition')) {
     if (verbose) cat("Received the following error when estimating BMD:",bmd_est$bmd_est,".\n")
     out$info$errors$bmd_est <- bmd_est
+    out$info$bmd_samps <- bmd_samps
+    out$info$bmd_samps_clean <- bmd_samps_clean
     return(out)
   }
   out$bmd <- bmd_est
@@ -225,19 +227,22 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
   kx <- knotindex(bmd_est,tmbdata$smoothobj$knots)
   bx0 <- Bsplinevec(x0,tmbdata$smoothobj$knots,4)
   Vn <- Vx_cpp(bmd_est,V,tmbdata$smoothobj$knots,bx0,sigmaest)
+  dt_tmp <- as.numeric(difftime(Sys.time(),tm,units='secs'))
 
+  tm <- Sys.time()
   gammadiff <- (p-1)*c(0,diff(gammaest)[1:(length(gammaest)-1)]) / (tmbdata$smoothobj$knots[(p+1):(length(gammaest)+p)] - tmbdata$smoothobj$knots[2:(length(gammaest)+1)])
   Upn <- abs(Uxd_cpp(bmd_est,gammadiff,tmbdata$smoothobj$knots,kx,sigmaest))
   bmd_l_delta_est <- bmd_est - stats::qnorm(.975)*sqrt(Vn)/Upn
   dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
-  out$info$computation_time$bmdl_delta <- dt
+  out$info$computation_time$bmdl_delta <- dt + dt_tmp
   out$info$bmdl_alternatives$delta <- bmd_l_delta_est
   out$info$approximations$Vn <- Vn
   out$info$approximations$Upn <- Upn
   ## Score ##
   tm <- Sys.time()
   bmd_l_score_est <- tryCatch(get_score_cpp(betaest,V,tmbdata$smoothobj$knots,c(x0,bmd_est),x0,sigmaest,A,1e-06,10),error = function(e) e)
-  out$info$computation_time$bmdl_score <- dt
+  dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
+  out$info$computation_time$bmdl_score <- dt + dt_tmp
   if (inherits(bmd_l_score_est,'condition')) {
     if (verbose) cat("Received the following error when estimating score BMDL:",bmd_l_score_est$bmd_l_score_est,".\n")
     out$info$errors$bmd_l_score_est <- bmd_l_score_est

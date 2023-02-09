@@ -2,9 +2,12 @@
 % Please edit documentation in R/helpers.R
 \name{get_computation_times}
 \alias{get_computation_times}
+\alias{get_relative_computation_times}
 \title{Get computation times}
 \usage{
 get_computation_times(object, ...)
+
+get_relative_computation_times(object, ...)
 }
 \arguments{
 \item{object}{Object of class \code{semibmd}

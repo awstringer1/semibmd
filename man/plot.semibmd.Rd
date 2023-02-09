@@ -4,10 +4,12 @@
 \alias{plot.semibmd}
 \title{Plot method for \code{semibmd} objects}
 \usage{
-\method{plot}{semibmd}(x, ...)
+\method{plot}{semibmd}(x, plot = FALSE, ...)
 }
 \arguments{
 \item{x}{Object of class \code{semibmd} returned by \code{semibmd::benchmark_dose}.}
+
+\item{plot}{Logical, plots the model if \code{TRUE} (default) otherwise returns the plot data for further use.}
 
 \item{...}{Not used.}
 }
