@@ -194,6 +194,45 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// Psix_cpp
+double Psix_cpp(double x, Eigen::VectorXd beta, Eigen::MatrixXd V, Eigen::VectorXd knots, int k, double fx0, Eigen::VectorXd bx0, double sigmaest, double A);
+RcppExport SEXP _semibmd_Psix_cpp(SEXP xSEXP, SEXP betaSEXP, SEXP VSEXP, SEXP knotsSEXP, SEXP kSEXP, SEXP fx0SEXP, SEXP bx0SEXP, SEXP sigmaestSEXP, SEXP ASEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type V(VSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type knots(knotsSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< double >::type fx0(fx0SEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type bx0(bx0SEXP);
+    Rcpp::traits::input_parameter< double >::type sigmaest(sigmaestSEXP);
+    Rcpp::traits::input_parameter< double >::type A(ASEXP);
+    rcpp_result_gen = Rcpp::wrap(Psix_cpp(x, beta, V, knots, k, fx0, bx0, sigmaest, A));
+    return rcpp_result_gen;
+END_RCPP
+}
+// Psixd_cpp
+double Psixd_cpp(double x, Eigen::VectorXd beta, Eigen::VectorXd betadiff, Eigen::MatrixXd V, Eigen::VectorXd knots, int k, double fx0, Eigen::VectorXd bx0, double sigmaest, double A);
+RcppExport SEXP _semibmd_Psixd_cpp(SEXP xSEXP, SEXP betaSEXP, SEXP betadiffSEXP, SEXP VSEXP, SEXP knotsSEXP, SEXP kSEXP, SEXP fx0SEXP, SEXP bx0SEXP, SEXP sigmaestSEXP, SEXP ASEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type betadiff(betadiffSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type V(VSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type knots(knotsSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< double >::type fx0(fx0SEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type bx0(bx0SEXP);
+    Rcpp::traits::input_parameter< double >::type sigmaest(sigmaestSEXP);
+    Rcpp::traits::input_parameter< double >::type A(ASEXP);
+    rcpp_result_gen = Rcpp::wrap(Psixd_cpp(x, beta, betadiff, V, knots, k, fx0, bx0, sigmaest, A));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_bmd_cpp
 double get_bmd_cpp(Eigen::VectorXd beta, Eigen::VectorXd knots, Eigen::VectorXd bounds, double x0, double sigmaest, double A, double eps, int maxitr);
 RcppExport SEXP _semibmd_get_bmd_cpp(SEXP betaSEXP, SEXP knotsSEXP, SEXP boundsSEXP, SEXP x0SEXP, SEXP sigmaestSEXP, SEXP ASEXP, SEXP epsSEXP, SEXP maxitrSEXP) {
@@ -212,6 +251,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_score_cpp
+double get_score_cpp(Eigen::VectorXd beta, Eigen::MatrixXd V, Eigen::VectorXd knots, Eigen::VectorXd bounds, double x0, double sigmaest, double A, double eps, int maxitr);
+RcppExport SEXP _semibmd_get_score_cpp(SEXP betaSEXP, SEXP VSEXP, SEXP knotsSEXP, SEXP boundsSEXP, SEXP x0SEXP, SEXP sigmaestSEXP, SEXP ASEXP, SEXP epsSEXP, SEXP maxitrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type V(VSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type knots(knotsSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type bounds(boundsSEXP);
+    Rcpp::traits::input_parameter< double >::type x0(x0SEXP);
+    Rcpp::traits::input_parameter< double >::type sigmaest(sigmaestSEXP);
+    Rcpp::traits::input_parameter< double >::type A(ASEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< int >::type maxitr(maxitrSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_score_cpp(beta, V, knots, bounds, x0, sigmaest, A, eps, maxitr));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_semibmd_knotindex", (DL_FUNC) &_semibmd_knotindex, 2},
@@ -227,7 +285,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_semibmd_Uxd_cpp", (DL_FUNC) &_semibmd_Uxd_cpp, 5},
     {"_semibmd_Vx_cpp", (DL_FUNC) &_semibmd_Vx_cpp, 5},
     {"_semibmd_Vxd_cpp", (DL_FUNC) &_semibmd_Vxd_cpp, 5},
+    {"_semibmd_Psix_cpp", (DL_FUNC) &_semibmd_Psix_cpp, 9},
+    {"_semibmd_Psixd_cpp", (DL_FUNC) &_semibmd_Psixd_cpp, 10},
     {"_semibmd_get_bmd_cpp", (DL_FUNC) &_semibmd_get_bmd_cpp, 8},
+    {"_semibmd_get_score_cpp", (DL_FUNC) &_semibmd_get_score_cpp, 9},
     {NULL, NULL, 0}
 };
 

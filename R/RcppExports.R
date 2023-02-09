@@ -53,7 +53,19 @@ Vxd_cpp <- function(x, V, knots, bx0, sigmaest) {
     .Call(`_semibmd_Vxd_cpp`, x, V, knots, bx0, sigmaest)
 }
 
+Psix_cpp <- function(x, beta, V, knots, k, fx0, bx0, sigmaest, A) {
+    .Call(`_semibmd_Psix_cpp`, x, beta, V, knots, k, fx0, bx0, sigmaest, A)
+}
+
+Psixd_cpp <- function(x, beta, betadiff, V, knots, k, fx0, bx0, sigmaest, A) {
+    .Call(`_semibmd_Psixd_cpp`, x, beta, betadiff, V, knots, k, fx0, bx0, sigmaest, A)
+}
+
 get_bmd_cpp <- function(beta, knots, bounds, x0, sigmaest, A, eps, maxitr) {
     .Call(`_semibmd_get_bmd_cpp`, beta, knots, bounds, x0, sigmaest, A, eps, maxitr)
+}
+
+get_score_cpp <- function(beta, V, knots, bounds, x0, sigmaest, A, eps, maxitr) {
+    .Call(`_semibmd_get_score_cpp`, beta, V, knots, bounds, x0, sigmaest, A, eps, maxitr)
 }
 

@@ -165,6 +165,23 @@ double Vxd_cpp(double x,Eigen::MatrixXd V,Eigen::VectorXd knots,Eigen::VectorXd 
   return -2.*bxdiff.dot(bxD) / (sigmaest*sigmaest);
 }
 
+// [[Rcpp::export]]
+double Psix_cpp(double x,Eigen::VectorXd beta,Eigen::MatrixXd V,Eigen::VectorXd knots,int k,double fx0,Eigen::VectorXd bx0,double sigmaest,double A) {
+  double Ux = Ux_cpp(x,beta,knots,k,fx0,sigmaest,A);
+  double Vx = Vx_cpp(x,V,knots,bx0,sigmaest);
+  double chisq = 3.841459;
+  return (Ux*Ux) - Vx*chisq;
+}
+
+// [[Rcpp::export]]
+double Psixd_cpp(double x,Eigen::VectorXd beta,Eigen::VectorXd betadiff,Eigen::MatrixXd V,Eigen::VectorXd knots,int k,double fx0,Eigen::VectorXd bx0,double sigmaest,double A) {
+  double Ux = Ux_cpp(x,beta,knots,k,fx0,sigmaest,A);
+  double Uxd = Uxd_cpp(x,betadiff,knots,k,sigmaest);
+  double Vxd = Vxd_cpp(x,V,knots,bx0,sigmaest);
+  double chisq = 3.841459;
+
+  return 2*Ux*Uxd - Vxd*chisq;
+}
 
 
 // [[Rcpp::export]]
@@ -189,6 +206,38 @@ double get_bmd_cpp(Eigen::VectorXd beta,Eigen::VectorXd knots,Eigen::VectorXd bo
     k = knotindex(xt,knots);
     gt = Ux_cpp(xt,gamma,knots,k,fx0,sigmaest,A);
     gpt = Uxd_cpp(xt,gammadiff,knots,k,sigmaest);
+    // std::cout << "itr " << itr << " xt " << xt << " gt " << gt << " gpt " << gpt << " k " << k << std::endl;
+    xt -= gt / gpt;
+    xt = reflect(xt,bounds(0),bounds(1));
+    itr++;
+  }
+
+  return xt;
+}
+
+// [[Rcpp::export]]
+double get_score_cpp(Eigen::VectorXd beta,Eigen::MatrixXd V,Eigen::VectorXd knots,Eigen::VectorXd bounds,double x0,double sigmaest,double A,double eps,int maxitr) {
+  // Setup initial quantities
+  Eigen::VectorXd gamma = get_gamma(beta);
+  // std::cout << "gamma = " << gamma << std::endl << std::endl;
+  double fx0 = deBoor(x0,knotindex(x0,knots),knots,gamma,4);
+  Eigen::VectorXd bx0 = Bsplinevec(x0,knots,4);
+  // Differenced coefficients
+  int d = gamma.size(), p=4;
+  Eigen::VectorXd gammadiff(d-1);
+  gammadiff(0) = 0;
+  for (int i=1;i<d-1;i++)
+    gammadiff(i) = (p-1)*(gamma(i) - gamma(i-1)) / (knots(i+p-1) - knots(i));
+
+  // Newton
+  int itr=1,k=0;
+  double xt = (bounds(0)+bounds(1))/2.;
+  double gt=1.+eps; // Make sure it's bigger than eps to start
+  double gpt = 1;
+  while((itr < maxitr) && (abs(gt) > eps)) {
+    k = knotindex(xt,knots);
+    gt = Psix_cpp(xt,gamma,V,knots,k,fx0,bx0,sigmaest,A);
+    gpt = Psixd_cpp(xt,gamma,gammadiff,V,knots,k,fx0,bx0,sigmaest,A);
     // std::cout << "itr " << itr << " xt " << xt << " gt " << gt << " gpt " << gpt << " k " << k << std::endl;
     xt -= gt / gpt;
     xt = reflect(xt,bounds(0),bounds(1));

@@ -235,7 +235,15 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
   out$info$approximations$Vn <- Vn
   out$info$approximations$Upn <- Upn
   ## Score ##
-
+  tm <- Sys.time()
+  bmd_l_score_est <- tryCatch(get_score_cpp(betaest,V,tmbdata$smoothobj$knots,c(x0,bmd_est),x0,sigmaest,A,1e-06,10),error = function(e) e)
+  out$info$computation_time$bmdl_score <- dt
+  if (inherits(bmd_l_score_est,'condition')) {
+    if (verbose) cat("Received the following error when estimating score BMDL:",bmd_l_score_est$bmd_l_score_est,".\n")
+    out$info$errors$bmd_l_score_est <- bmd_l_score_est
+    return(out)
+  }
+  out$bmdl <- bmd_l_score_est
 
   # Plot information
   tm <- Sys.time()
