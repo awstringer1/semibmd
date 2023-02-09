@@ -224,7 +224,7 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
   V <- stats::cov(t(gammasamps)) # This is surprisingly fast
   kx <- knotindex(bmd_est,tmbdata$smoothobj$knots)
   bx0 <- Bsplinevec(x0,tmbdata$smoothobj$knots,4)
-  Vn <- Vx_cpp(bmd_est,V,tmbdata$smoothobj$knots,kx,bx0,sigmaest)
+  Vn <- Vx_cpp(bmd_est,V,tmbdata$smoothobj$knots,bx0,sigmaest)
 
   gammadiff <- (p-1)*c(0,diff(gammaest)[1:(length(gammaest)-1)]) / (tmbdata$smoothobj$knots[(p+1):(length(gammaest)+p)] - tmbdata$smoothobj$knots[2:(length(gammaest)+1)])
   Upn <- abs(Uxd_cpp(bmd_est,gammadiff,tmbdata$smoothobj$knots,kx,sigmaest))
@@ -235,6 +235,7 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
   out$info$approximations$Vn <- Vn
   out$info$approximations$Upn <- Upn
   ## Score ##
+
 
   # Plot information
   tm <- Sys.time()

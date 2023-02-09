@@ -151,7 +151,7 @@ mod1_tmb <- benchmark_dose_tmb(
 monosmooths <- list(s(x,bs='bs'))
 smooths <- NULL
 params2 <- set_parameters_mono(scale=1,sigma=.5,p0=.01,BMR=.01,knots=10)
-data <- simulate_data_mono(500,params2)
+data <- dat2
 exposure <- 'x'
 response <- 'y'
 x0 <- 0

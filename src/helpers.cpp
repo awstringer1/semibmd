@@ -42,6 +42,25 @@ Eigen::VectorXd Bsplinevec(double x,Eigen::VectorXd t,int p) {
   return b;
 }
 
+// [[Rcpp::export]]
+double BsplineD(double x,int j,Eigen::VectorXd t,int p) {
+  if (p==1)
+    return(0.);
+
+  double out = (p-1) * (Bspline(x,j,t,p-1)/(t(j+(p-1)) - t(j)) - Bspline(x,j+1,t,p-1)/(t(j+p) - t(j+1)));
+  return out;
+}
+
+// [[Rcpp::export]]
+Eigen::VectorXd BsplinevecD(double x,Eigen::VectorXd t,int p) {
+  int m = t.size() - p;
+  Eigen::VectorXd b(m);
+  b.setZero();
+  int k = knotindex(x,t);
+  for (int i=(k-(p-1));i<k+1;i++)
+    b(i) = BsplineD(x,i+1,t,p);
+  return b;
+}
 
 
 // deBoor's algorithm for spline
@@ -116,7 +135,7 @@ double Uxd_cpp(double x,Eigen::VectorXd beta,Eigen::VectorXd knots,int k,double 
 
 // Variance of U(x)
 // [[Rcpp::export]]
-double Vx_cpp(double x,Eigen::MatrixXd V,Eigen::VectorXd knots,int k,Eigen::VectorXd bx0,double sigmaest) {
+double Vx_cpp(double x,Eigen::MatrixXd V,Eigen::VectorXd knots,Eigen::VectorXd bx0,double sigmaest) {
   // V: covariance matrix of gamma
   Eigen::MatrixXd L(V.llt().matrixL());
   L.transposeInPlace(); // Upper triangular
@@ -132,6 +151,20 @@ double Vx_cpp(double x,Eigen::MatrixXd V,Eigen::VectorXd knots,int k,Eigen::Vect
 
   return outvec.squaredNorm() / (sigmaest*sigmaest);
 }
+
+// Derivative of variance of U(x)
+// [[Rcpp::export]]
+double Vxd_cpp(double x,Eigen::MatrixXd V,Eigen::VectorXd knots,Eigen::VectorXd bx0,double sigmaest) {
+  int m = V.cols(), p = bx0.size();
+  Eigen::VectorXd bxdiff(m);
+  bxdiff.setZero();
+  bxdiff.segment(0,p) = bx0 - Bsplinevec(x,knots,4);
+  Eigen::VectorXd bxD = BsplinevecD(x,knots,4);
+
+  bxdiff = V * bxdiff;
+  return -2.*bxdiff.dot(bxD) / (sigmaest*sigmaest);
+}
+
 
 
 // [[Rcpp::export]]

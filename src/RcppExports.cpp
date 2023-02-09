@@ -50,6 +50,33 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// BsplineD
+double BsplineD(double x, int j, Eigen::VectorXd t, int p);
+RcppExport SEXP _semibmd_BsplineD(SEXP xSEXP, SEXP jSEXP, SEXP tSEXP, SEXP pSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type j(jSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type t(tSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    rcpp_result_gen = Rcpp::wrap(BsplineD(x, j, t, p));
+    return rcpp_result_gen;
+END_RCPP
+}
+// BsplinevecD
+Eigen::VectorXd BsplinevecD(double x, Eigen::VectorXd t, int p);
+RcppExport SEXP _semibmd_BsplinevecD(SEXP xSEXP, SEXP tSEXP, SEXP pSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type t(tSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    rcpp_result_gen = Rcpp::wrap(BsplinevecD(x, t, p));
+    return rcpp_result_gen;
+END_RCPP
+}
 // deBoor
 double deBoor(double x, int k, Eigen::VectorXd t, Eigen::VectorXd beta, int p);
 RcppExport SEXP _semibmd_deBoor(SEXP xSEXP, SEXP kSEXP, SEXP tSEXP, SEXP betaSEXP, SEXP pSEXP) {
@@ -138,18 +165,32 @@ BEGIN_RCPP
 END_RCPP
 }
 // Vx_cpp
-double Vx_cpp(double x, Eigen::MatrixXd V, Eigen::VectorXd knots, int k, Eigen::VectorXd bx0, double sigmaest);
-RcppExport SEXP _semibmd_Vx_cpp(SEXP xSEXP, SEXP VSEXP, SEXP knotsSEXP, SEXP kSEXP, SEXP bx0SEXP, SEXP sigmaestSEXP) {
+double Vx_cpp(double x, Eigen::MatrixXd V, Eigen::VectorXd knots, Eigen::VectorXd bx0, double sigmaest);
+RcppExport SEXP _semibmd_Vx_cpp(SEXP xSEXP, SEXP VSEXP, SEXP knotsSEXP, SEXP bx0SEXP, SEXP sigmaestSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< double >::type x(xSEXP);
     Rcpp::traits::input_parameter< Eigen::MatrixXd >::type V(VSEXP);
     Rcpp::traits::input_parameter< Eigen::VectorXd >::type knots(knotsSEXP);
-    Rcpp::traits::input_parameter< int >::type k(kSEXP);
     Rcpp::traits::input_parameter< Eigen::VectorXd >::type bx0(bx0SEXP);
     Rcpp::traits::input_parameter< double >::type sigmaest(sigmaestSEXP);
-    rcpp_result_gen = Rcpp::wrap(Vx_cpp(x, V, knots, k, bx0, sigmaest));
+    rcpp_result_gen = Rcpp::wrap(Vx_cpp(x, V, knots, bx0, sigmaest));
+    return rcpp_result_gen;
+END_RCPP
+}
+// Vxd_cpp
+double Vxd_cpp(double x, Eigen::MatrixXd V, Eigen::VectorXd knots, Eigen::VectorXd bx0, double sigmaest);
+RcppExport SEXP _semibmd_Vxd_cpp(SEXP xSEXP, SEXP VSEXP, SEXP knotsSEXP, SEXP bx0SEXP, SEXP sigmaestSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< Eigen::MatrixXd >::type V(VSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type knots(knotsSEXP);
+    Rcpp::traits::input_parameter< Eigen::VectorXd >::type bx0(bx0SEXP);
+    Rcpp::traits::input_parameter< double >::type sigmaest(sigmaestSEXP);
+    rcpp_result_gen = Rcpp::wrap(Vxd_cpp(x, V, knots, bx0, sigmaest));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -176,13 +217,16 @@ static const R_CallMethodDef CallEntries[] = {
     {"_semibmd_knotindex", (DL_FUNC) &_semibmd_knotindex, 2},
     {"_semibmd_Bspline", (DL_FUNC) &_semibmd_Bspline, 4},
     {"_semibmd_Bsplinevec", (DL_FUNC) &_semibmd_Bsplinevec, 3},
+    {"_semibmd_BsplineD", (DL_FUNC) &_semibmd_BsplineD, 4},
+    {"_semibmd_BsplinevecD", (DL_FUNC) &_semibmd_BsplinevecD, 3},
     {"_semibmd_deBoor", (DL_FUNC) &_semibmd_deBoor, 5},
     {"_semibmd_reflect", (DL_FUNC) &_semibmd_reflect, 3},
     {"_semibmd_bounded_newton", (DL_FUNC) &_semibmd_bounded_newton, 6},
     {"_semibmd_get_gamma", (DL_FUNC) &_semibmd_get_gamma, 1},
     {"_semibmd_Ux_cpp", (DL_FUNC) &_semibmd_Ux_cpp, 7},
     {"_semibmd_Uxd_cpp", (DL_FUNC) &_semibmd_Uxd_cpp, 5},
-    {"_semibmd_Vx_cpp", (DL_FUNC) &_semibmd_Vx_cpp, 6},
+    {"_semibmd_Vx_cpp", (DL_FUNC) &_semibmd_Vx_cpp, 5},
+    {"_semibmd_Vxd_cpp", (DL_FUNC) &_semibmd_Vxd_cpp, 5},
     {"_semibmd_get_bmd_cpp", (DL_FUNC) &_semibmd_get_bmd_cpp, 8},
     {NULL, NULL, 0}
 };
