@@ -53,8 +53,7 @@ get_bmd <- function(object,...) {
 #' model used to compute the bmd(l).
 #'
 #' @export
-get_model <- function(object,...)
-  mod <- object$model
+get_model <- function(object,...) object$model
 
 #' Check the estimated BMD/L
 #'
@@ -130,7 +129,7 @@ get_all_bmdl <- function(object,...) {
   for (j in 1:length(possible_bmdl)) {
     nm <- possible_bmdl[j]
     if (nm %in% names(object$info$bmdl_alternatives)) {
-      out <- c(out,object$info$bmdl_alternatives[[nm]])
+      out <- c(out,unname(object$info$bmdl_alternatives[[nm]]))
       names(out) <- c(names(out)[names(out)!= ""],nm)
     }
   }
@@ -171,6 +170,8 @@ get_approximations <- function(object,...) {
 #'
 #' @return Named numeric vector containing the computation times in seconds.
 #'
+#' @rdname comptimes
+#'
 #' @export
 get_computation_times <- function(object,...) {
   times <- object$info$computation_time
@@ -186,6 +187,14 @@ get_computation_times <- function(object,...) {
     return(out)
   }
   numeric()
+}
+#' @rdname comptimes
+#'
+#' @export
+get_relative_computation_times <- function(object,...) {
+  tms <- get_computation_times(object,...)
+  m <- length(tms)
+  scales::percent(tms[1:(m-1)]/tms[m],accuracy=.01)
 }
 
 # Sampling-based intervals

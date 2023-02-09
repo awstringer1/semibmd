@@ -5,6 +5,14 @@ knotindex <- function(x, t) {
     .Call(`_semibmd_knotindex`, x, t)
 }
 
+Bspline <- function(x, j, t, p) {
+    .Call(`_semibmd_Bspline`, x, j, t, p)
+}
+
+Bsplinevec <- function(x, t, p) {
+    .Call(`_semibmd_Bsplinevec`, x, t, p)
+}
+
 deBoor <- function(x, k, t, beta, p) {
     .Call(`_semibmd_deBoor`, x, k, t, beta, p)
 }
@@ -29,8 +37,8 @@ Uxd_cpp <- function(x, beta, knots, k, sigmaest) {
     .Call(`_semibmd_Uxd_cpp`, x, beta, knots, k, sigmaest)
 }
 
-Vx_cpp <- function(x, Vbeta, knots, k, x0, sigmaest) {
-    .Call(`_semibmd_Vx_cpp`, x, Vbeta, knots, k, x0, sigmaest)
+Vx_cpp <- function(x, V, knots, k, bx0, sigmaest) {
+    .Call(`_semibmd_Vx_cpp`, x, V, knots, k, bx0, sigmaest)
 }
 
 get_bmd_cpp <- function(beta, knots, bounds, x0, sigmaest, A, eps, maxitr) {

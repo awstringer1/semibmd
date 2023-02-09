@@ -379,9 +379,28 @@ plot.semibmd <- function(x,...) {
     graphics::abline(v = bmd[1],lty='longdash')
     graphics::abline(v = bmd[2],lty='dotdash')
   } else {
-    with(mod$plotinfo,plot(x,estimate,type='l',xlim = range(x),ylim = c(min(lower),max(upper))))
-    with(mod$plotinfo,graphics::lines(x,lower,lty='dashed'))
-    with(mod$plotinfo,graphics::lines(x,upper,lty='dashed'))
+
+    xx <- seq(mod$plotinfo$minx,mod$plotinfo$maxx,length.out=1e03)
+    preddat <- data.frame(x=xx)
+    XX <- mgcv::PredictMat(mod$plotinfo$monosmoothobj,preddat)
+    gammasamps <- apply(mod$plotinfo$samps$beta,2,get_gamma)
+    fitted <- XX %*% gammasamps
+    colmeans <- colMeans(fitted)
+    fitted <- sweep(fitted,2,colmeans,"-")
+    fitted <- sweep(fitted,2,mod$plotinfo$samps$alpha,"+")
+    samp_lower <- tryCatch(apply(fitted,1,stats::quantile,probs=.025),error = function(e) e)
+    samp_upper <- tryCatch(apply(fitted,1,stats::quantile,probs=.975),error = function(e) e)
+    samp_median <- tryCatch(apply(fitted,1,stats::median),error = function(e) e)
+
+    # Spaghetti plot
+    plot(xx,fitted[ ,1],type='l',col=scales::alpha('lightgrey',0.2),xlim = range(xx),ylim = c(min(samp_lower),max(samp_upper)))
+    M <- min(200,ncol(fitted))
+    for (i in 2:M)
+      graphics::lines(xx,fitted[ ,i],col=scales::alpha('lightgrey',0.2))
+
+    graphics::lines(xx,samp_median)
+    graphics::lines(xx,samp_lower,lty='dashed')
+    graphics::lines(xx,samp_upper,lty='dashed')
     graphics::abline(v = bmd[1],lty='longdash')
     graphics::abline(v = bmd[2],lty='dotdash')
   }

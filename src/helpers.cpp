@@ -11,6 +11,38 @@ int knotindex(double x,Eigen::VectorXd t) {
   return k-1;
 }
 
+// B-splines
+double weight(double x,Eigen::VectorXd t,int i,int k) {
+  if (t(i+k-1) != t(i-1))
+    return((x - t(i-1))/(t(i+k-1)-t(i-1)));
+  return 0.;
+}
+// [[Rcpp::export]]
+double Bspline(double x,int j,Eigen::VectorXd t,int p) {
+  // Evaluate the jth B-spline
+  // B_p(x) of order p (degree p-1) at x
+  if (p==1)
+    return(x>=t(j-1) && x<t(j+1-1));
+
+  double w1 = weight(x,t,j,p-1);
+  double w2 = weight(x,t,j+1,p-1);
+  double b1 = Bspline(x,j,t,p-1);
+  double b2 = Bspline(x,j+1,t,p-1);
+
+  return w1*b1 + (1.-w2)*b2;
+}
+// [[Rcpp::export]]
+Eigen::VectorXd Bsplinevec(double x,Eigen::VectorXd t,int p) {
+  int m = t.size() - p;
+  Eigen::VectorXd b(m);
+  b.setZero();
+  int k = knotindex(x,t);
+  for (int i=(k-(p-1));i<k+1;i++)
+    b(i) = Bspline(x,i+1,t,p);
+  return b;
+}
+
+
 
 // deBoor's algorithm for spline
 // [[Rcpp::export]]
@@ -84,18 +116,23 @@ double Uxd_cpp(double x,Eigen::VectorXd beta,Eigen::VectorXd knots,int k,double 
 
 // Variance of U(x)
 // [[Rcpp::export]]
-double Vx_cpp(double x,Eigen::MatrixXd Vbeta,Eigen::VectorXd knots,int k,double x0,double sigmaest) {
-  // Cholesky of Vbeta
-  Eigen::MatrixXd L(Vbeta.llt().matrixL());
-  // std::cout << L << std::endl << std::endl;
+double Vx_cpp(double x,Eigen::MatrixXd V,Eigen::VectorXd knots,int k,Eigen::VectorXd bx0,double sigmaest) {
+  // V: covariance matrix of gamma
+  Eigen::MatrixXd L(V.llt().matrixL());
+  L.transposeInPlace(); // Upper triangular
+  int m = V.cols(), p = bx0.size();
 
-  int d=L.cols();
-  Eigen::VectorXd coldeboor(d);
-  for (int i=0;i<d;i++)
-    coldeboor(i) = deBoor(x,k,knots,L.col(i),4);
+  // spline
+  Eigen::VectorXd bxdiff(m);
+  bxdiff.setZero();
+  bxdiff.segment(0,p) = bx0 - Bsplinevec(x,knots,4);
 
-  return 0.;
+  // system solve
+  Eigen::VectorXd outvec = L * bxdiff;
+
+  return outvec.squaredNorm() / (sigmaest*sigmaest);
 }
+
 
 // [[Rcpp::export]]
 double get_bmd_cpp(Eigen::VectorXd beta,Eigen::VectorXd knots,Eigen::VectorXd bounds,double x0,double sigmaest,double A,double eps,int maxitr) {

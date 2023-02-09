@@ -41,6 +41,9 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
   ## Setup BMD related quantities ##
   A <- stats::qnorm(p0+BMR) - stats::qnorm(p0)
 
+
+  p <- 4 # B-Spline order
+
   ## Setup Model Fitting Quantities ##
   # NON-monotone smooths
   # TODO
@@ -188,7 +191,7 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
   tm <- Sys.time()
   bmd_est <- tryCatch(get_bmd_cpp(betaest,tmbdata$smoothobj$knots,c(x0,xmax),x0,sigmaest,A,1e-06,100),error = function(e) e)
   if (inherits(bmd_est,'condition')) {
-    if (verbose) cat("Received the following error when estimating BMD:",samp_upper$bmd_est,".\n")
+    if (verbose) cat("Received the following error when estimating BMD:",bmd_est$bmd_est,".\n")
     out$info$errors$bmd_est <- bmd_est
     return(out)
   }
@@ -214,63 +217,33 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
   out$info$bmdl_alternatives$bmdl_bayes <- bmdl_est_bayesboot
 
   ## TODO: score and delta
-  ## variance: just compute the B-spline vectors directly, not worth it
-  ## to do deBoors. Can also compute derivatives using the same recursions.
-  ##
+
+  ## Delta ##
+  tm <- Sys.time()
+  gammasamps <- apply(samps$beta,2,get_gamma)
+  V <- stats::cov(t(gammasamps)) # This is surprisingly fast
+  kx <- knotindex(bmd_est,tmbdata$smoothobj$knots)
+  bx0 <- Bsplinevec(x0,tmbdata$smoothobj$knots,4)
+  Vn <- Vx_cpp(bmd_est,V,tmbdata$smoothobj$knots,kx,bx0,sigmaest)
+
+  gammadiff <- (p-1)*c(0,diff(gammaest)[1:(length(gammaest)-1)]) / (tmbdata$smoothobj$knots[(p+1):(length(gammaest)+p)] - tmbdata$smoothobj$knots[2:(length(gammaest)+1)])
+  Upn <- abs(Uxd_cpp(bmd_est,gammadiff,tmbdata$smoothobj$knots,kx,sigmaest))
+  bmd_l_delta_est <- bmd_est - stats::qnorm(.975)*sqrt(Vn)/Upn
+  dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
+  out$info$computation_time$bmdl_delta <- dt
+  out$info$bmdl_alternatives$delta <- bmd_l_delta_est
+  out$info$approximations$Vn <- Vn
+  out$info$approximations$Upn <- Upn
+  ## Score ##
 
   # Plot information
   tm <- Sys.time()
-  xx <- seq(min(data[[exposure]]),max(data[[exposure]]),length.out=1e03)
-  preddat <- data.frame(x=xx)
-  colnames(preddat) <- exposure
-  XX <- mgcv::PredictMat(monosmoothobj,preddat)
-  gammasamps <- apply(samps$beta,2,get_gamma)
-  fitted <- XX %*% gammasamps
-  colmeans <- colMeans(fitted)
-  fitted <- sweep(fitted,2,colmeans,"-")
-  fitted <- sweep(fitted,2,samps$alpha,"+")
-  samp_lower <- tryCatch(apply(fitted,1,stats::quantile,probs=.025),error = function(e) e)
-  samp_upper <- tryCatch(apply(fitted,1,stats::quantile,probs=.975),error = function(e) e)
-  samp_median <- tryCatch(apply(fitted,1,stats::median),error = function(e) e)
-  if (inherits(samp_lower,'condition')) {
-    if (verbose) cat("Received the following error when computing lower quantiles:",samp_lower$message,".\n")
-    out$info$errors$lower_quantiles <- samp_lower
-    out$info$samps <- samps # Return stuff if there was an error in them
-    out$info$betaest <- betaest
-    out$info$alphaest <- alphaest
-    out$info$randprec <- randprec
-    out$info$tmbdata <- tmbdata
-    return(out)
-  }
-  if (inherits(samp_upper,'condition')) {
-    if (verbose) cat("Received the following error when computing upper quantiles:",samp_upper$message,".\n")
-    out$info$errors$lower_quantiles <- samp_upper
-    out$info$samps <- samps # Return stuff if there was an error in them
-    out$info$betaest <- betaest
-    out$info$alphaest <- alphaest
-    out$info$randprec <- randprec
-    out$info$tmbdata <- tmbdata
-    return(out)
-  }
-  if (inherits(samp_median,'condition')) {
-    if (verbose) cat("Received the following error when computing upper quantiles:",samp_median$message,".\n")
-    out$info$errors$median <- samp_median
-    out$info$samps <- samps # Return stuff if there was an error in them
-    out$info$betaest <- betaest
-    out$info$alphaest <- alphaest
-    out$info$randprec <- randprec
-    out$info$tmbdata <- tmbdata
-    return(out)
-  }
-
   out$model <- list(
     plotinfo = list(
-      x = xx,
-      estimate = samp_median,
-      lower = samp_lower,
-      upper = samp_upper,
-      bmd = bmd_est,
-      bmdl = bmdl_est_bayesboot
+      minx = min(data[[exposure]]),
+      maxx = max(data[[exposure]]),
+      monosmoothobj = monosmoothobj,
+      samps = samps
     )
   )
   dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
