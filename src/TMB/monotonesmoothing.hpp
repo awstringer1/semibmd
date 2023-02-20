@@ -12,38 +12,36 @@ Type monotonesmoothing(objective_function<Type>* obj) {
   using namespace density;
   // Gaussian monotone GAM
   DATA_VECTOR(y); // Response
-  DATA_UPDATE(y); // To enable bootstrapping
-  DATA_MATRIX(X); // Basis function matrix, dimension n x d
+  DATA_MATRIX(Xmono); // Basis function matrix, dimension n x d
   DATA_VECTOR(c); // colSums(X), pass in for speed. Length d
-  DATA_SPARSE_MATRIX(Dp); // Penalty matrix, dimension r x r
-  DATA_MATRIX(U); // Eigenvectors of penalty, used to transform beta
+  DATA_SPARSE_MATRIX(Dpmono); // Penalty matrix, dimension r x r
+  DATA_MATRIX(Umono); // Eigenvectors of penalty, used to transform beta
 
   // PARAMETER(alpha); // intercept
-  PARAMETER_VECTOR(betaR); // length r
-  PARAMETER_VECTOR(betaF); // length d-r
+  PARAMETER_VECTOR(betaRmono); // length r
+  PARAMETER_VECTOR(betaFmono); // length d-r
   PARAMETER(alpha);
 
 
   PARAMETER(logprec); // log(1/sigma^2), log precision of y
-  PARAMETER(logsmoothing); // log(lambda), log smoothing param
+  PARAMETER(logsmoothingmono); // log(lambda), log smoothing param
 
   // Constants
   int n = y.size();
-  int r = betaR.size();
-  int d = r + betaF.size();
+  int r = betaRmono.size();
+  int d = r + betaFmono.size();
 
   // Transformations
   vector<Type> betaC(d);
-  betaC << betaR,betaF;
-  vector<Type> beta = U*betaC;
+  betaC << betaRmono,betaFmono;
+  vector<Type> beta = Umono*betaC;
 
 
   Type sd = exp(-0.5*logprec);
-  Type lambda = exp(logsmoothing);
+  Type lambda = exp(logsmoothingmono);
   // Dp --> lambda * Dp; have to loop over nonzero elements
-  // TODO: Dp is diagonal so pass as vector, should be much faster
-  for (int k=0; k<Dp.outerSize(); k++)
-    for (typename SparseMatrix<Type>::InnerIterator it(Dp,k); it; ++it)
+  for (int k=0; k<Dpmono.outerSize(); k++)
+    for (typename SparseMatrix<Type>::InnerIterator it(Dpmono,k); it; ++it)
       it.valueRef() = it.value() * lambda;
 
   vector<Type> gamma(d);
@@ -51,7 +49,7 @@ Type monotonesmoothing(objective_function<Type>* obj) {
   for (int i=1;i<d;	i++)
     gamma(i) = gamma(i-1) - exp(beta(i));
 
-  vector<Type> mu = X*gamma;
+  vector<Type> mu = Xmono*gamma;
   Type colsum = (c * gamma).sum();
   for (int i=0;i<n;i++) {
     mu(i) -= colsum / n;
@@ -61,22 +59,12 @@ Type monotonesmoothing(objective_function<Type>* obj) {
   // Objective function
   // Negative "log likelihood + log prior"
   // Initialize with prior
-  Type logprior = GMRF(Dp)(betaR); // Negative! TODO: do this manually
-  // for (int j=1;j<d;j++) logprior -= beta(j); // negative Log determinant of Jacobian
+  Type logprior = GMRF(Dpmono)(betaRmono); // Negative! TODO: do this manually
+
   Type loglik = 0.;
   for (int i=0;i<n;i++)
     // loglik -= dnorm(y(i),mu(i),sd,true);
     loglik += 0.5*exp(logprec)*(y(i)-mu(i))*(y(i)-mu(i)) - 0.5*logprec; // This has been checked
-
-  // Debugging quantities
-  REPORT(Dp);
-  REPORT(U);
-  REPORT(mu);
-  REPORT(logprior);
-  REPORT(loglik);
-  REPORT(gamma);
-  REPORT(beta);
-  REPORT(colsum);
 
   return logprior + loglik; // Actually minus loglik
 }

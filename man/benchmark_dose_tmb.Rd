@@ -7,6 +7,7 @@
 benchmark_dose_tmb(
   monosmooths,
   smooths,
+  linearterms,
   data,
   exposure,
   response,
@@ -20,11 +21,13 @@ benchmark_dose_tmb(
 )
 }
 \arguments{
-\item{monosmooths}{A list of \code{mgcv}-compatible formulas of the type s(x,bs='bs') to be treated as monotone smooths. Must
+\item{monosmooths}{A list of \code{mgcv}-compatible smooth formula terms of the type \code{s(x,bs='bs')} to be treated as monotone smooths. Must
 use B-Spline bases. Must contain the variable specified in \code{exposure}.}
 
-\item{smooths}{A list of \code{mgcv}-compatible formulas of the type s(x,bs='bs') to be treated as non-monotone smooths. Must
+\item{smooths}{A list of \code{mgcv}-compatible smooth formula terms of the type \code{s(x,bs='bs')} to be treated as non-monotone smooths. Must
 use B-Spline bases.}
+
+\item{linearterms}{A one-sided formula of the form \code{~x1+x2} compatible with \code{model.matrix}, defining any linear terms in the model.}
 
 \item{data}{\code{data.frame} containing the variables in \code{smooths}, \code{monosmooths}, and \code{response}.}
 

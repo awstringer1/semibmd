@@ -4,7 +4,7 @@
 \alias{plot.semibmd}
 \title{Plot method for \code{semibmd} objects}
 \usage{
-\method{plot}{semibmd}(x, plot = FALSE, ...)
+\method{plot}{semibmd}(x, plot = TRUE, ...)
 }
 \arguments{
 \item{x}{Object of class \code{semibmd} returned by \code{semibmd::benchmark_dose}.}

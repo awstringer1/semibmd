@@ -84,5 +84,4 @@ test_that("benchmark dosing works", {
   expect_named(get_computation_times(mod1_bayes),c('model','bmd','bmdl_score','bmdl_delta','bmdl_bayes','total'))
   expect_named(get_computation_times(mod1_bothboot),c('model','bmd','bmdl_score','bmdl_delta','bmdl_boot','bmdl_bayes','total'))
 
-
 })

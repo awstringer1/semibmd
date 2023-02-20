@@ -136,6 +136,7 @@ dat2 <- simulate_data_mono(500,params2)
 mod1_tmb <- benchmark_dose_tmb(
   monosmooths = list(s(x,bs='bs')),
   smooths = NULL,
+  linearterms = NULL,
   data = dat2,
   exposure = 'x',
   response = 'y',
@@ -152,6 +153,39 @@ monosmooths <- list(s(x,bs='bs'))
 smooths <- NULL
 params2 <- set_parameters_mono(scale=1,sigma=.5,p0=.01,BMR=.01,knots=10)
 data <- dat2
+exposure <- 'x'
+response <- 'y'
+x0 <- 0
+p0 <- .01
+BMR <- .01
+verbose=FALSE
+eps=1e-06
+maxitr=10
+bayes_boot=1e03
+
+
+## Multiple Smooth components ##
+
+simulate_data_multi <- function(n,params) {
+  xcov <- with(params,seq(xmin,xmax,length.out=n))
+  x1 <- with(params,runif(n,xmin,xmax))
+  x2 <- with(params,runif(n,xmin,xmax))
+  z1 <- with(params,runif(n,xmin,xmax))
+  z2 <- with(params,runif(n,xmin,xmax))
+
+
+  fz1 <- function(z) sin(2*pi*z)
+  fz2 <- function(z) dnorm(2*z-.5)/dnorm(0)
+
+
+  with(params,data.frame(y = rnorm(n,f(xcov)+fz1(z1)+fz2(z2)+2*x1-x2,sigma),x = xcov,x1=x1,x2=x2,z1=z1,z2=z2))
+}
+
+monosmooths <- list(s(x,bs='bs'))
+smooths <- list(s(z1,bs='bs'),s(z2,bs='bs'))
+linearterms <- ~x1+x2
+params3 <- set_parameters_mono(scale=1,sigma=.5,p0=.01,BMR=.01,knots=10)
+data <- simulate_data_multi(500,params3)
 exposure <- 'x'
 response <- 'y'
 x0 <- 0

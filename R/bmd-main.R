@@ -372,7 +372,7 @@ print.summary.semibmd <- function(x,digits = 4,...) {
 #' @rdname plot.semibmd
 #'
 #' @export
-plot.semibmd <- function(x,plot=FALSE,...) {
+plot.semibmd <- function(x,plot=TRUE,...) {
   mod <- get_model(x)
   bmd <- get_bmd(x)
   if (inherits(mod,c('scam','gam'))) {

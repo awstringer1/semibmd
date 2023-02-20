@@ -3,12 +3,15 @@
 #define TMB_LIB_INIT R_init_semibmd_TMBExports
 #include <TMB.hpp>
 #include "monotonesmoothing.hpp"
-
+#include "monotonesmoothingmulti.hpp"
+// tmp2
 template<class Type>
 Type objective_function<Type>::operator() () {
   DATA_STRING(model);
   if(model == "monotonesmoothing") {
     return monotonesmoothing(this);
+  } else if (model == "monotonesmoothingmulti") {
+    return monotonesmoothingmulti(this);
   } else {
     Rf_error("Unknown model.");
   }

@@ -5,10 +5,11 @@
 #' Benchmark dosing based on a custom implementation of monotone B-spline-based additive models
 #' using TMB and Rcpp
 #'
-#' @param monosmooths A list of \code{mgcv}-compatible formulas of the type s(x,bs='bs') to be treated as monotone smooths. Must
+#' @param monosmooths A list of \code{mgcv}-compatible smooth formula terms of the type \code{s(x,bs='bs')} to be treated as monotone smooths. Must
 #' use B-Spline bases. Must contain the variable specified in \code{exposure}.
-#' @param smooths A list of \code{mgcv}-compatible formulas of the type s(x,bs='bs') to be treated as non-monotone smooths. Must
+#' @param smooths A list of \code{mgcv}-compatible smooth formula terms of the type \code{s(x,bs='bs')} to be treated as non-monotone smooths. Must
 #' use B-Spline bases.
+#' @param linearterms A one-sided formula of the form \code{~x1+x2} compatible with \code{model.matrix}, defining any linear terms in the model.
 #' @param data \code{data.frame} containing the variables in \code{smooths}, \code{monosmooths}, and \code{response}.
 #' @param exposure Character vector naming the exposure variable in the \code{monosmooths} formulas. Will always be treated as monotone decreasing.
 #' @param response Character vector naming the response variable in \code{data}.
@@ -30,7 +31,7 @@
 #' @rawNamespace useDynLib(semibmd, .registration=TRUE); useDynLib(semibmd_TMBExports)
 #'
 #' @export
-benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,BMR,verbose=FALSE,eps=1e-06,maxitr=10,bayes_boot=1e03) {
+benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,response,x0,p0,BMR,verbose=FALSE,eps=1e-06,maxitr=10,bayes_boot=1e03) {
   ## Create output object ##
   out <- list(
     info = list(errors = list(),bmdl_alternatives = list(),computation_time = list())
@@ -47,20 +48,35 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
   ## Setup Model Fitting Quantities ##
   # NON-monotone smooths
   # TODO
-  smoothobj <- list()
+  smoothobj <- S <- X <- cc <- EE <- r <- Dp <- U <- list()
+  nonmono <- 0
   if (!is.null(smooths)) {
-    # TODO: list processing for multiple variables
-    smoothobj <- mgcv::smoothCon(smooths[[1]],data=data,absorb.cons=FALSE,scale.penalty=TRUE)[[1]]
-    S <- smoothobj$S[[1]]
-    X <- smoothobj$X
-    cc <- colSums(X)
-    EE <- eigen(S)
-    r <- sum(EE$values>1e-08)
-    Dp <- EE$values[1:r]
+    nonmono <- 1L
+    for (j in 1:length(smooths)) {
+      # TODO: list processing for multiple variables
+      smoothobj[[j]] <- mgcv::smoothCon(smooths[[j]],data=data,absorb.cons=FALSE,scale.penalty=TRUE)[[1]]
+      S[[j]] <- smoothobj[[j]]$S[[1]]
+      X[[j]] <- smoothobj[[j]]$X
+      cc[[j]] <- colSums(smoothobj[[j]]$X)
+      EE[[j]] <- eigen(S[[j]])
+      r[[j]] <- sum(EE[[j]]$values>1e-08)
+      Dp[[j]] <- EE[[j]]$values[1:r[[j]]]
+      U[[j]] <- EE[[j]]$vectors
+    }
+    ## Create the combined smooth matrices ##
+    # X: column binded. Also use to create indices
+    Xsmooth <- Reduce(cbind,X)
+    dsmooth <- Reduce(c,Map(ncol,X))
+    rsmooth <- Reduce(c,r)
+    # U: block diagonal, sparse
+    Usmooth <- Matrix::bdiag(U)
+    Dpsmooth <- Reduce(c,Dp)
   }
+
 
   # Monotone smooths
   if (is.null(monosmooths)) stop("At least one monotone smoothing variable must be specified.")
+  if (length(monosmooths)>1) stop("Only one monotone smooth supported at this time.")
   monosmoothobj <- mgcv::smoothCon(monosmooths[[1]],data=data,absorb.cons=FALSE,scale.penalty=TRUE)[[1]]
   Smono <- monosmoothobj$S[[1]]
   Xmono <- monosmoothobj$X
@@ -75,39 +91,59 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
   tmbdata <- list(
     y = data[[response]],
     xcov = data[[exposure]],
-    X = Xmono,
+    Xmono = Xmono,
+    c = colSums(Xmono),
     S = Smono, # Only required for starting values
-    Dp = methods::as(methods::as(Matrix::Diagonal(x=Dpmono),'generalMatrix'),'TsparseMatrix'),
-    U = Umono,
-    c = ccmono,
-    smoothobj = monosmoothobj
+    Dpmono = methods::as(methods::as(Matrix::Diagonal(x=Dpmono),'generalMatrix'),'TsparseMatrix'),
+    Umono = Umono,
+    smoothobj = monosmoothobj,
+    nonmono = nonmono
   )
+  if (nonmono)
+      tmbdata <- c(tmbdata,list(
+        Xsmooth = Xsmooth,
+        Dpsmooth = methods::as(methods::as(Matrix::Diagonal(x=Dpsmooth),'generalMatrix'),'TsparseMatrix'),
+        Usmooth = Usmooth,
+        rs = rsmooth,
+        ds = dsmooth
+      ))
 
   # Parameters for TMB
   alpha <- mean(tmbdata$y)
   vr <- stats::var(tmbdata$y)
-  sm <- 1/mean(Dpmono)
-  beta <- as.numeric(with(tmbdata,Matrix::solve((Matrix::crossprod(X) + sm*S),Matrix::crossprod(X,y))))
+  sm <- 1/mean(EEmono$values[1:rmono])
+  beta <- as.numeric(with(tmbdata,Matrix::solve((Matrix::crossprod(Xmono) + sm*Smono),Matrix::crossprod(Xmono,y))))
 
-  UR <- tmbdata$U[ ,1:rmono]
-  UF <- tmbdata$U[ ,(rmono+1):dmono]
+  UR <- tmbdata$Umono[ ,1:rmono]
+  UF <- tmbdata$Umono[ ,(rmono+1):dmono]
   betaR <- as.numeric(Matrix::crossprod(UR,beta))
   betaF <- as.numeric(Matrix::crossprod(UF,beta))
 
   tmbparams <- 	list(
     alpha = alpha,
-    betaR = betaR,
-    betaF = betaF,
+    betaRmono = betaR,
+    betaFmono = betaF,
     logprec = -log(vr),
-    logsmoothing = log(sm)
+    logsmoothingmono = log(sm),
+    betaRsmooth = rnorm(sum(rsmooth)),
+    betaFsmooth = rnorm(sum(dsmooth-rsmooth)),
+    logsmoothingsmooth = rnorm(length(rsmooth))
   )
 
+  if (nonmono) {
+    whichmodel <- "monotonesmoothingmulti"
+    whichrandom <- c("alpha","betaRmono","betaFmono","betaRsmooth","betaFsmooth")
+  } else {
+    whichmodel <- "monotonesmoothing"
+    whichrandom <- c("alpha","betaRmono","betaFmono")
+  }
+
   template_inner <- tryCatch(TMB::MakeADFun(
-    data = c(model = "monotonesmoothing",tmbdata),
+    data = c(model = whichmodel,tmbdata),
     parameters = tmbparams,
     silent = TRUE,
     DLL = "semibmd_TMBExports",
-    random = c("alpha","betaR","betaF")
+    random = whichrandom
   ),error = function(e) e)
   if (inherits(template_inner,'condition')) {
     if (verbose) cat("Received the following error when creating TMB template:",template_inner$message,".\n")
@@ -116,6 +152,8 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
   }
 
   opt1 <- tryCatch(with(template_inner,stats::optim(par,fn,gr,method='BFGS',hessian = FALSE)),error = function(e) e)
+
+
 
   if (inherits(opt1,'condition')) {
     if (verbose) cat("Received the following error optimizing TMB template:",opt1$message,".\n")
@@ -138,8 +176,9 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
     return(out)
   }
 
+  # Everything here still pertains only to the monotone smooth
   randest <- with(template_inner$env,last.par[random])
-  betaRFest <- randest[names(randest) %in% c("betaR","betaF")]
+  betaRFest <- randest[names(randest) %in% c("betaRmono","betaFmono")]
   betaest <- as.numeric(tmbdata$U %*% betaRFest)
   gammaest <- get_gamma(betaest)
   alphaest <- randest['alpha']
@@ -217,8 +256,6 @@ benchmark_dose_tmb <- function(monosmooths,smooths,data,exposure,response,x0,p0,
     return(out)
   }
   out$info$bmdl_alternatives$bmdl_bayes <- bmdl_est_bayesboot
-
-  ## TODO: score and delta
 
   ## Delta ##
   tm <- Sys.time()
