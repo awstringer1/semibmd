@@ -383,7 +383,8 @@ plot.semibmd <- function(x,plot=TRUE,...) {
 
     xx <- seq(mod$plotinfo$minx,mod$plotinfo$maxx,length.out=1e03)
     preddat <- data.frame(x=xx)
-    XX <- mgcv::PredictMat(mod$plotinfo$monosmoothobj,preddat)
+    # XX <- mgcv::PredictMat(mod$plotinfo$monosmoothobj,preddat)
+    XX <- mgcv::Predict.matrix(mod$plotinfo$monosmoothobj,preddat)
     gammasamps <- apply(mod$plotinfo$samps$beta,2,get_gamma)
     fitted <- XX %*% gammasamps
     colmeans <- colMeans(fitted)

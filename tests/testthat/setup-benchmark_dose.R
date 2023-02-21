@@ -130,6 +130,7 @@ simulate_data_mono <- function(n,params) {
   with(params,data.frame(y = rnorm(n,f(xcov),sigma),x = xcov))
 }
 
+set.seed(472389)
 params2 <- set_parameters_mono(scale=1,sigma=.5,p0=.01,BMR=.01,knots=10)
 dat2 <- simulate_data_mono(500,params2)
 
@@ -149,19 +150,19 @@ mod1_tmb <- benchmark_dose_tmb(
   bayes_boot = 1e03
 )
 
-monosmooths <- list(s(x,bs='bs'))
-smooths <- NULL
-params2 <- set_parameters_mono(scale=1,sigma=.5,p0=.01,BMR=.01,knots=10)
-data <- dat2
-exposure <- 'x'
-response <- 'y'
-x0 <- 0
-p0 <- .01
-BMR <- .01
-verbose=FALSE
-eps=1e-06
-maxitr=10
-bayes_boot=1e03
+# monosmooths <- list(s(x,bs='bs'))
+# smooths <- NULL
+# params2 <- set_parameters_mono(scale=1,sigma=.5,p0=.01,BMR=.01,knots=10)
+# data <- dat2
+# exposure <- 'x'
+# response <- 'y'
+# x0 <- 0
+# p0 <- .01
+# BMR <- .01
+# verbose=FALSE
+# eps=1e-06
+# maxitr=10
+# bayes_boot=1e03
 
 
 ## Multiple Smooth components ##
@@ -175,17 +176,40 @@ simulate_data_multi <- function(n,params) {
 
 
   fz1 <- function(z) sin(2*pi*z)
-  fz2 <- function(z) dnorm(2*z-.5)/dnorm(0)
+  fz2 <- function(z) cos(2*pi*z)
+  # fz2 <- function(z) dnorm(2*z-.5)/dnorm(0)
+
 
 
   with(params,data.frame(y = rnorm(n,f(xcov)+fz1(z1)+fz2(z2)+2*x1-x2,sigma),x = xcov,x1=x1,x2=x2,z1=z1,z2=z2))
 }
 
+
+set.seed(472398)
+params3 <- set_parameters_mono(scale=5,sigma=.5,p0=.01,BMR=.01,knots=10)
+dat3 <- simulate_data_multi(500,params3)
+
+mod2_tmb <- benchmark_dose_tmb(
+  monosmooths = list(s(x,bs='bs')),
+  smooths = list(s(z1,bs='bs'),s(z2,bs='bs')),
+  linearterms = NULL,
+  data = dat3,
+  exposure = 'x',
+  response = 'y',
+  x0 = 0,
+  p0 = .01,
+  BMR = .01,
+  verbose = TRUE,
+  eps = 1e-06,
+  maxitr = 10,
+  bayes_boot = 1e03
+)
+
+
 monosmooths <- list(s(x,bs='bs'))
 smooths <- list(s(z1,bs='bs'),s(z2,bs='bs'))
-linearterms <- ~x1+x2
-params3 <- set_parameters_mono(scale=1,sigma=.5,p0=.01,BMR=.01,knots=10)
-data <- simulate_data_multi(500,params3)
+linearterms <- NULL
+data <- dat3
 exposure <- 'x'
 response <- 'y'
 x0 <- 0
@@ -195,5 +219,12 @@ verbose=FALSE
 eps=1e-06
 maxitr=10
 bayes_boot=1e03
+
+# library(scam)
+# testmod <- scam(y ~ s(x,bs='mpd')+s(z1,bs='bs')+s(z2,bs='bs'),data=data,family='gaussian')
+# summary(testmod)
+
+
+
 
 

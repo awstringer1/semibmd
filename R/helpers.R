@@ -210,7 +210,7 @@ get_samples <- function(beta,alpha,H,tmbdata,M=1000) {
   d <- length(beta)
   Z <- matrix(stats::rnorm(p*M),p,M)
   Z <- Matrix::solve(Hchol,Z,system="Lt")
-  betasamps <- tmbdata$U %*% Z[1:d, ]
+  betasamps <- tmbdata$Umono %*% Z[1:d, ]
   betasamps <- sweep(betasamps,1,beta,'+')
   # gammasamps <- apply(betasamps,2,get_gamma)
   alphasamps <- Z[d+1, ] + alpha

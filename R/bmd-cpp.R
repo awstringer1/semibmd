@@ -48,18 +48,19 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
   ## Setup Model Fitting Quantities ##
   # NON-monotone smooths
   # TODO
-  smoothobj <- S <- X <- cc <- EE <- r <- Dp <- U <- list()
+  smoothobj <- S <- X <- cc <- EE <- r <- d <- Dp <- U <- list()
   nonmono <- 0
   if (!is.null(smooths)) {
     nonmono <- 1L
     for (j in 1:length(smooths)) {
       # TODO: list processing for multiple variables
-      smoothobj[[j]] <- mgcv::smoothCon(smooths[[j]],data=data,absorb.cons=FALSE,scale.penalty=TRUE)[[1]]
+      smoothobj[[j]] <- mgcv::smoothCon(smooths[[j]],data=data,absorb.cons=TRUE,scale.penalty=TRUE)[[1]]
       S[[j]] <- smoothobj[[j]]$S[[1]]
       X[[j]] <- smoothobj[[j]]$X
       cc[[j]] <- colSums(smoothobj[[j]]$X)
       EE[[j]] <- eigen(S[[j]])
       r[[j]] <- sum(EE[[j]]$values>1e-08)
+      d[[j]] <- length(EE[[j]]$values)
       Dp[[j]] <- EE[[j]]$values[1:r[[j]]]
       U[[j]] <- EE[[j]]$vectors
     }
@@ -71,13 +72,15 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
     # U: block diagonal, sparse
     Usmooth <- Matrix::bdiag(U)
     Dpsmooth <- Reduce(c,Dp)
+  } else {
+    rsmooth <- dsmooth <- 1 # Placeholder
   }
 
 
   # Monotone smooths
   if (is.null(monosmooths)) stop("At least one monotone smoothing variable must be specified.")
   if (length(monosmooths)>1) stop("Only one monotone smooth supported at this time.")
-  monosmoothobj <- mgcv::smoothCon(monosmooths[[1]],data=data,absorb.cons=FALSE,scale.penalty=TRUE)[[1]]
+  monosmoothobj <- mgcv::smoothCon(monosmooths[[1]],data=data,absorb.cons=TRUE,scale.penalty=TRUE)[[1]]
   Smono <- monosmoothobj$S[[1]]
   Xmono <- monosmoothobj$X
   ccmono <- colSums(Xmono)
@@ -108,26 +111,42 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
         ds = dsmooth
       ))
 
-  # Parameters for TMB
+  # Starting values for TMB
   alpha <- mean(tmbdata$y)
   vr <- stats::var(tmbdata$y)
   sm <- 1/mean(EEmono$values[1:rmono])
-  beta <- as.numeric(with(tmbdata,Matrix::solve((Matrix::crossprod(Xmono) + sm*Smono),Matrix::crossprod(Xmono,y))))
+  betamono <- as.numeric(with(tmbdata,Matrix::solve((Matrix::crossprod(Xmono) + sm*Smono),Matrix::crossprod(Xmono,y))))
 
-  UR <- tmbdata$Umono[ ,1:rmono]
-  UF <- tmbdata$Umono[ ,(rmono+1):dmono]
-  betaR <- as.numeric(Matrix::crossprod(UR,beta))
-  betaF <- as.numeric(Matrix::crossprod(UF,beta))
+  URmono <- tmbdata$Umono[ ,1:rmono]
+  UFmono <- tmbdata$Umono[ ,(rmono+1):dmono]
+  betaRmono <- as.numeric(Matrix::crossprod(URmono,betamono))
+  betaFmono <- as.numeric(Matrix::crossprod(UFmono,betamono))
+  # Unconstrained smooths
+  betasmooth <- numeric(sum(dsmooth))
+  betaRsmooth <- numeric(sum(rsmooth))
+  betaFsmooth <- numeric(sum(dsmooth-rsmooth))
+  logsmoothingsmooth <- numeric(length(rsmooth))
+  if (nonmono) {
+    betaRsmooth <- betaFsmooth <- c()
+    for (j in 1:length(smooths)) {
+      logsmoothingsmooth[j] <- -log(mean(EE[[j]]$values[1:r[[j]]]))
+      tmpbeta <- as.numeric(Matrix::solve((Matrix::crossprod(X[[j]]) + exp(logsmoothingsmooth[j])*S[[j]]),Matrix::crossprod(X[[j]],tmbdata$y)))
+      tmpUR <- EE[[j]]$vectors[ ,1:r[[j]]]
+      tmpUF <- EE[[j]]$vectors[ ,(r[[j]]+1):d[[j]]]
+      betaRsmooth <- c(betaRsmooth,as.numeric(Matrix::crossprod(tmpUR,tmpbeta)))
+      betaFsmooth <- c(betaFsmooth,as.numeric(Matrix::crossprod(tmpUF,tmpbeta)))
+    }
+  }
 
   tmbparams <- 	list(
     alpha = alpha,
-    betaRmono = betaR,
-    betaFmono = betaF,
+    betaRmono = betaRmono,
+    betaFmono = betaFmono,
     logprec = -log(vr),
     logsmoothingmono = log(sm),
-    betaRsmooth = rnorm(sum(rsmooth)),
-    betaFsmooth = rnorm(sum(dsmooth-rsmooth)),
-    logsmoothingsmooth = rnorm(length(rsmooth))
+    betaRsmooth = betaRsmooth,
+    betaFsmooth = betaFsmooth,
+    logsmoothingsmooth = logsmoothingsmooth
   )
 
   if (nonmono) {
@@ -144,6 +163,8 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
     silent = TRUE,
     DLL = "semibmd_TMBExports",
     random = whichrandom
+    # random = NULL,
+    # map = list(logsmoothingsmooth=factor(rep(NA,2)),logprec=factor(NA),logsmoothingmono=factor(NA))
   ),error = function(e) e)
   if (inherits(template_inner,'condition')) {
     if (verbose) cat("Received the following error when creating TMB template:",template_inner$message,".\n")
@@ -153,8 +174,6 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
 
   opt1 <- tryCatch(with(template_inner,stats::optim(par,fn,gr,method='BFGS',hessian = FALSE)),error = function(e) e)
 
-
-
   if (inherits(opt1,'condition')) {
     if (verbose) cat("Received the following error optimizing TMB template:",opt1$message,".\n")
     out$info$errors$optimization <- opt1
@@ -163,6 +182,9 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
 
   sigmaest <- exp(-.5*opt1$par[1])
   lambdaest <- exp(opt1$par[2])
+  if (nonmono) {
+    lambdasmoothest <- exp(opt1$par[3:length(opt1$par)])
+  }
 
   val <- tryCatch(template_inner$fn(opt1$par),error = function(e) e)
   if (inherits(val,'condition')) {
@@ -176,10 +198,11 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
     return(out)
   }
 
-  # Everything here still pertains only to the monotone smooth
+  ## Estimates ##
+  ## Everything here still pertains only to the monotone smooth ##
   randest <- with(template_inner$env,last.par[random])
   betaRFest <- randest[names(randest) %in% c("betaRmono","betaFmono")]
-  betaest <- as.numeric(tmbdata$U %*% betaRFest)
+  betaest <- as.numeric(tmbdata$Umono %*% betaRFest)
   gammaest <- get_gamma(betaest)
   alphaest <- randest['alpha']
 
@@ -190,17 +213,24 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
     out$info$errors$jointhessian <- fullprec
     return(out)
   }
-  randomidx <- template_inner$env$random
-  paramdimfull <- ncol(fullprec)
-  paramdimrandom <- length(randomidx)
-  hyperidx <- (paramdimrandom+1):(paramdimfull)
-  randprec <- fullprec[randomidx,randomidx]
+  # randomidx <- template_inner$env$random
+  # paramdimfull <- ncol(fullprec)
+  # paramdimrandom <- length(randomidx)
+  # hyperidx <- (paramdimrandom+1):(paramdimfull)
+  # randprec <- fullprec[randomidx,randomidx]
 
+  # UPDATE: index out the monotone smooths and the intercept, not all random effects
+  monoidx <- which(names(randest) %in% c("betaRmono","betaFmono","alpha"))
+  # This works better if the monotone smooths are the first ones in the vector, followed by the intercept
+  # This is determined only by the implementation, not the user, but check for it to prevent a mistake by future me
+  # TODO: use proper indexing, will need to do for plotting all the curves
+  stopifnot(all(monoidx == 1:length(monoidx)))
   dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
   out$info$computation_time$model <- dt
 
   tm <- Sys.time()
-  samps <- tryCatch(get_samples(betaest,alphaest,randprec,tmbdata,M=bayes_boot),error = function(e) e)
+  # samps <- tryCatch(get_samples(betaest,alphaest,randprec,tmbdata,M=bayes_boot),error = function(e) e)
+  samps <- tryCatch(get_samples(betaest,alphaest,fullprec,tmbdata,M=bayes_boot),error = function(e) e)
   if (inherits(samps,'condition')) {
     if (verbose) cat("Received the following error when drawing posterior samples:",samps$message,".\n")
     out$info$errors$posteriorsamples <- samps
@@ -251,7 +281,7 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
     out$info$samps <- samps # Return stuff if there was an error in them
     out$info$betaest <- betaest
     out$info$alphaest <- alphaest
-    out$info$randprec <- randprec
+    out$info$fullprec <- fullprec
     out$info$tmbdata <- tmbdata
     return(out)
   }
@@ -297,6 +327,19 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
       samps = samps
     )
   )
+  if (nonmono) {
+    out$model$plotinfosmooth <- list()
+    for(j in 1:length(smooths)) {
+      tmpsmooth <- smooths[[j]]
+      tmpvar <- tmpsmooth$term
+      out$model$plotinfosmooth[[j]] <- list(
+        minx = min(data[[tmpvar]]),
+        maxx = max(data[[tmpvar]]),
+        monosmoothobj = smoothobj[[j]],
+        samps = samps # TODO
+      )
+    }
+  }
   dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
   out$info$computation_time$plot_information <- dt
 
