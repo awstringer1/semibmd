@@ -394,25 +394,27 @@ plot.semibmd <- function(x,plot=TRUE,...) {
     samp_upper <- tryCatch(apply(fitted,1,stats::quantile,probs=.975),error = function(e) e)
     samp_median <- tryCatch(apply(fitted,1,stats::median),error = function(e) e)
 
-    if (!plot) return(list(
-      x = xx,
-      fitted = fitted,
-      estimate = samp_median,
-      lower = samp_lower,
-      upper = samp_upper
-    ))
+    if (!plot) {
+      out <- list(mono = list(
+        x = xx,
+        fitted = fitted,
+        estimate = samp_median,
+        lower = samp_lower,
+        upper = samp_upper
+      ))
+    } else {
+      # Spaghetti plot
+      plot(xx,fitted[ ,1],type='l',col=scales::alpha('lightgrey',0.2),xlim = range(xx),ylim = c(min(samp_lower),max(samp_upper)))
+      M <- min(200,ncol(fitted))
+      for (i in 2:M)
+        graphics::lines(xx,fitted[ ,i],col=scales::alpha('lightgrey',0.2))
 
-    # Spaghetti plot
-    plot(xx,fitted[ ,1],type='l',col=scales::alpha('lightgrey',0.2),xlim = range(xx),ylim = c(min(samp_lower),max(samp_upper)))
-    M <- min(200,ncol(fitted))
-    for (i in 2:M)
-      graphics::lines(xx,fitted[ ,i],col=scales::alpha('lightgrey',0.2))
-
-    graphics::lines(xx,samp_median)
-    graphics::lines(xx,samp_lower,lty='dashed')
-    graphics::lines(xx,samp_upper,lty='dashed')
-    graphics::abline(v = bmd[1],lty='longdash')
-    graphics::abline(v = bmd[2],lty='dotdash')
+      graphics::lines(xx,samp_median)
+      graphics::lines(xx,samp_lower,lty='dashed')
+      graphics::lines(xx,samp_upper,lty='dashed')
+      graphics::abline(v = bmd[1],lty='longdash')
+      graphics::abline(v = bmd[2],lty='dotdash')
+    }
 
     # Plot non-monotone smooths
     if (length(mod$plotinfosmooth)>0) {
@@ -444,14 +446,28 @@ plot.semibmd <- function(x,plot=TRUE,...) {
           samp_upper <- tryCatch(apply(fitted,1,stats::quantile,probs=.975),error = function(e) e)
           samp_median <- tryCatch(apply(fitted,1,stats::median),error = function(e) e)
 
-          plot(xx,fitted[ ,1],type='l',col=scales::alpha('lightgrey',0.2),xlim = range(xx),ylim = c(min(samp_lower),max(samp_upper)))
-          for (i in 2:M)
-            graphics::lines(xx,fitted[ ,i],col=scales::alpha('lightgrey',0.2))
+          if (plot) {
+            plot(xx,fitted[ ,1],type='l',col=scales::alpha('lightgrey',0.2),xlim = range(xx),ylim = c(min(samp_lower),max(samp_upper)))
+            for (i in 2:M)
+              graphics::lines(xx,fitted[ ,i],col=scales::alpha('lightgrey',0.2))
 
-          graphics::lines(xx,samp_median)
-          graphics::lines(xx,samp_lower,lty='dashed')
-          graphics::lines(xx,samp_upper,lty='dashed')
+            graphics::lines(xx,samp_median)
+            graphics::lines(xx,samp_lower,lty='dashed')
+            graphics::lines(xx,samp_upper,lty='dashed')
+          } else {
+            out <- c(out,list(list(
+              x = xx,
+              fitted = fitted,
+              estimate = samp_median,
+              lower = samp_lower,
+              upper = samp_upper
+            )))
+          }
       }
     }    
+    if (!plot) {
+      names(out) <- c("mono",paste0("smooth_",1:length(mod$plotinfosmooth)))
+      return(out)
+    }
   }
 }

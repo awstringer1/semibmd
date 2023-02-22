@@ -1,7 +1,7 @@
 Semi-parametric Benchmark Dosing with semibmd
 ================
 Alex Stringer
-2023-01-31
+2023-02-22
 
 # Install the `semibmd` package
 
@@ -21,10 +21,10 @@ library(semibmd)
 Simulate some data to which the dose-response model is to be fit:
 
 ``` r
-n <- 100
-f <- function(x) 1/sqrt(x+.05)
+n <- 1000
+f <- function(x) exp(-5*x)
 xmin <- 0
-xmax <- .2
+xmax <- 1
 xcov <- seq(xmin,xmax,length.out=n)
 x1 <- runif(n,xmin,xmax)
 x2 <- runif(n,xmin,xmax)
@@ -33,13 +33,13 @@ dat <- data.frame(y = rnorm(n,f(xcov)+2*x1-x2,1),x = xcov,x1=x1,x2=x2)
 head(dat)
 ```
 
-    ##          y           x          x1         x2
-    ## 1 5.353954 0.000000000 0.036759392 0.16945822
-    ## 2 5.988536 0.002020202 0.002334835 0.11977962
-    ## 3 5.048516 0.004040404 0.132281661 0.03496355
-    ## 4 3.918865 0.006060606 0.036003663 0.09785578
-    ## 5 2.107215 0.008080808 0.025234051 0.03527543
-    ## 6 3.312403 0.010101010 0.116874519 0.13823451
+    ##            y           x        x1        x2
+    ## 1  3.1527499 0.000000000 0.9931191 0.8112452
+    ## 2  3.5555435 0.001001001 0.5799711 0.3186139
+    ## 3  1.5529567 0.002002002 0.1273123 0.2089178
+    ## 4  0.7761285 0.003003003 0.4893187 0.9088333
+    ## 5 -0.6459241 0.004004004 0.6541552 0.8770516
+    ## 6 -0.1262612 0.005005005 0.3598763 0.9591376
 
 The exposure variable is `x` and there are two additional variables `x1`
 and `x2` that can be included in the model.
@@ -98,26 +98,26 @@ summary(mod)
     ## 
     ## Parametric coefficients:
     ##             Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)   4.3253     0.4442   9.738 5.56e-16 ***
-    ## x1            0.2075     1.8659   0.111    0.912    
-    ## x2           -1.4292     1.9617  -0.729    0.468    
+    ## (Intercept)   0.7159     0.2979   2.403   0.0164 *  
+    ## x1            2.0824     0.1102  18.894  < 2e-16 ***
+    ## x2           -0.8446     0.1079  -7.826 1.28e-14 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Approximate significance of smooth terms:
-    ##       edf Ref.df     F  p-value    
-    ## s(x) 1.23  1.413 32.88 4.66e-09 ***
+    ##        edf Ref.df     F  p-value    
+    ## s(x) 1.993  2.442 13.32 4.27e-07 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## R-sq.(adj) =  0.2855   Deviance explained = 30.9%
-    ## GCV score = 1.2327  Scale est. = 1.1805    n = 100
+    ## R-sq.(adj) =  0.3168   Deviance explained = 31.9%
+    ## GCV score = 0.99588  Scale est. = 0.99091   n = 1000
     ## 
     ## ---
     ## Benchmark dose summary:
     ## ---
     ##      bmd   bmdl
-    ## 1 0.0293 0.0184
+    ## 1 0.2653 0.1182
     ## ---
 
 ``` r
@@ -167,25 +167,25 @@ summary(mod)
     ## 
     ## Parametric coefficients:
     ##             Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)   2.6722     0.2915   9.167  9.3e-15 ***
-    ## x1            0.1978     1.8658   0.106    0.916    
-    ## x2           -1.4285     1.9623  -0.728    0.468    
+    ## (Intercept)  0.03150    0.08626   0.365    0.715    
+    ## x1           2.08357    0.11019  18.909  < 2e-16 ***
+    ## x2          -0.84157    0.10790  -7.800 1.56e-14 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Approximate significance of smooth terms:
-    ##        edf Ref.df     F p-value    
-    ## s(x) 1.186  1.348 32.47  <2e-16 ***
+    ##       edf Ref.df     F  p-value    
+    ## s(x) 2.17  2.698 12.37 1.28e-06 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## R-sq.(adj) =  0.285   Deviance explained = 30.8%
-    ## GCV = 1.2328  Scale est. = 1.1812    n = 100
+    ## R-sq.(adj) =  0.317   Deviance explained =   32%
+    ## GCV = 0.99585  Scale est. = 0.99071   n = 1000
     ## ---
     ## Benchmark dose summary:
     ## ---
     ##      bmd   bmdl
-    ## 1 0.0302 0.0202
+    ## 1 0.3216 0.1794
     ## ---
 
 ``` r
@@ -232,7 +232,7 @@ various getter functions to get everything:
 get_bmd(mod)
 ```
 
-    ## [1] 0.03018814 0.02023496
+    ## [1] 0.3215382 0.1793811
 
 ``` r
 # All BMDLs:
@@ -240,7 +240,7 @@ get_all_bmdl(mod)
 ```
 
     ##      score      delta  bootstrap 
-    ## 0.02023496 0.01583446 0.01197126
+    ## 0.17938111 0.09711315 0.17856656
 
 # Errors and diagnostics
 
@@ -267,22 +267,22 @@ get_uxb(mod)
 ```
 
     ##            1 
-    ## 1.470831e-09
+    ## 1.123049e-09
 
 ``` r
 get_psixl(mod)
 ```
 
     ##               1
-    ## 1 -8.403449e-08
+    ## 1 -4.634262e-10
 
 ``` r
 # Approximation quantities: variance and derivative of U at BMD (used for delta method)
 get_approximations(mod)
 ```
 
-    ##          Vn         Upn 
-    ##  0.00762825 11.92607537
+    ##         Vn        Upn 
+    ## 0.01031609 0.88702184
 
 ``` r
 # Computation times of each step
@@ -290,4 +290,343 @@ get_computation_times(mod)
 ```
 
     ##       model         bmd  bmdl_score  bmdl_delta   bmdl_boot       total 
-    ## 0.012759924 0.009022951 0.017812014 0.007297993 8.015168905 8.062061787
+    ## 0.035870075 0.011064768 0.015925884 0.006181002 9.743435144 9.812476873
+
+# New Smoothing Method using TMB
+
+The method also is implemented from scratch using the Template Model
+Builder (TMB; <https://kaskr.github.io/adcomp/>). The `mgcv` package is
+still used to set up the bases and penalties, but then all the
+computations are done using custom code. The following methodological
+differences are present over `scam`:
+
+- The use of Laplace-approximate marginal likelihood to estimate
+  smoothing parameters instead of generalized cross-validation,
+- The use of full integrated second derivative penalties for the
+  monotone smooths (and other smooths) instead of difference-based
+  P-spline penalties, and
+- The direct application of linear sum-to-zero constraints on the
+  monontone smooth, as opposed to constraint-absorbing
+  reparameterizations. The latter are still used for the non-monotone
+  smooth terms.
+
+Simulations in paper show substantially improved performance of doing
+this way compared to `scam`.
+
+Here are two examples. Currently the method supports (a) a single
+monotone smooth, plus (b) any number of non-monotone smooths, and (c) no
+linear terms (although these could probably be provided as part of the
+`smooths` argument, I have not tested this).
+
+## A single monotone dose response curve only
+
+Here is an example of a model with only a single monotone smooth and
+nothing else. The interface is a bit different and is documented.
+**Note**: important, you use the regular `bs='bs'` basis now for the
+monotone dose-response smooth, **NOT** the `scam`-type `bs='mpd'`. The
+monotonicity is handled internally and is controlled by you passing this
+formula to the `monosmooths` argument of `benchmark_dose_tmb`.
+
+``` r
+set_parameters_mono <- function(scale=1,sigma=1,p0=GLOBAL_P0,BMR=.025,plot_it=FALSE,knots=10) {
+  xmin <- 0
+  xmax <- 1
+  # True function f
+  stopifnot(scale>0)
+  f <- function(x) exp(-x*scale)
+  finv <- function(x) -log(x)/scale
+
+  x0 <- 0
+  stopifnot(x0>=xmin)
+  tau0 <- f(x0) + sigma * qnorm(p0) # Response level
+  stopifnot(abs(pnorm(tau0,f(x0),sigma) - p0) < sqrt(.Machine$double.eps)) # Definition of tau
+
+  A <- qnorm(p0+BMR) - qnorm(p0)
+  # Benchmark dose
+  xb <- finv(f(x0) - sigma*A)
+  stopifnot(abs(pnorm(tau0,f(xb),sigma) - (p0+BMR)) < sqrt(.Machine$double.eps)) # Definition of benchmark dose
+
+  if (plot_it) {
+    curve(f,xmin,xmax,ylim=c(0,1))
+    abline(v=xb,lty='dashed')
+    cat("xb = ",xb,"; f'(xb)/sigma = ",numDeriv::grad(f,xb)/sigma,".\n",sep="")
+  } else {
+    list(
+      xmin = xmin,xmax = xmax,
+      sigma = sigma,
+      p0 = p0,BMR = BMR,
+      f = f,
+      x0 = x0,
+      tau0 = tau0,
+      A = A,
+      xb = xb,
+      knots=knots
+    )
+  }
+}
+
+simulate_data_mono <- function(n,params) {
+  xcov <- with(params,seq(xmin,xmax,length.out=n))
+  with(params,data.frame(y = rnorm(n,f(xcov),sigma),x = xcov))
+}
+
+set.seed(472389)
+library(mgcv) # Need this for s()
+params2 <- set_parameters_mono(scale=1,sigma=.5,p0=.01,BMR=.01,knots=10)
+dat2 <- simulate_data_mono(1000,params2)
+
+mod1_tmb <- benchmark_dose_tmb(
+  monosmooths = list(s(x,bs='bs')),
+  smooths = NULL,
+  linearterms = NULL,
+  data = dat2,
+  exposure = 'x',
+  response = 'y',
+  x0 = 0,
+  p0 = .01,
+  BMR = .01,
+  verbose = FALSE,
+  eps = 1e-06,
+  maxitr = 10,
+  bayes_boot = 1e03
+)
+class(mod1_tmb)
+```
+
+    ## [1] "semibmd"
+
+The `benchmark_dose_tmb` function is documented and does the work here.
+Because the `benchmark_dose_tmb` function returns an object of class
+`semibmd`, the same `plot`, `summary`, and other methods above work for
+it:
+
+``` r
+summary(mod1_tmb)
+```
+
+    ## ---
+    ## Dose-response model summary:
+    ## ---
+    ## [1] "Monotone Additive Model fit using Laplace-Approximate Marginal Likelihood in TMB"
+    ## ---
+    ## Benchmark dose summary:
+    ## ---
+    ##      bmd   bmdl
+    ## 1 0.0541 0.0233
+    ## ---
+
+``` r
+plot(mod1_tmb)
+```
+
+![](README_files/figure-gfm/monosummary-1.png)<!-- -->
+
+The output of the plot method is expanded a bit: I include a spaghetti
+plot of posterior samples of the fitted curve to enhance it a bit.
+
+We can compare to the same model fit to the same data the old way:
+
+``` r
+mod1_scam <- benchmark_dose(
+  y ~ s(x,bs='mpd'),
+  data = dat2,
+  exposure = 'x',
+  x0 = 0,
+  p0 = .01,
+  BMR = .01,
+  verbose = FALSE,
+  eps = 1e-06,
+  maxitr = 10
+)
+summary(mod1_scam)
+```
+
+    ## ---
+    ## Dose-response model summary:
+    ## ---
+    ## 
+    ## Family: gaussian 
+    ## Link function: identity 
+    ## 
+    ## Formula:
+    ## y ~ s(x, bs = "mpd")
+    ## 
+    ## Parametric coefficients:
+    ##             Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)   1.4326     0.2865       5 6.78e-07 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Approximate significance of smooth terms:
+    ##       edf Ref.df     F p-value    
+    ## s(x) 3.11  3.681 45.17  <2e-16 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## R-sq.(adj) =  0.1383   Deviance explained = 14.1%
+    ## GCV score = 0.24044  Scale est. = 0.23945   n = 1000
+    ## 
+    ## ---
+    ## Benchmark dose summary:
+    ## ---
+    ##      bmd   bmdl
+    ## 1 0.0683 0.0353
+    ## ---
+
+``` r
+plot(mod1_scam)
+```
+
+![](README_files/figure-gfm/monosimscam-1.png)<!-- -->
+
+We can the the BMD/L are a bit different:
+
+``` r
+get_bmd(mod1_tmb)
+```
+
+    ## [1] 0.05413111 0.02328782
+
+``` r
+get_bmd(mod1_scam)
+```
+
+    ## [1] 0.06834004 0.03527283
+
+``` r
+get_all_bmdl(mod1_tmb)
+```
+
+    ##       score       delta  bmdl_bayes 
+    ##  0.02328782 -0.01016350  0.02155320
+
+``` r
+get_all_bmdl(mod1_scam)
+```
+
+    ##      score      delta 
+    ## 0.03527283 0.01106405
+
+Again, simulations show the `TMB` approach is apparently better. Note
+that in the `plot` method for `scam` the curve is shown **without** the
+intercept, where for `TMB` it is shown **with** the intercept. This can
+be changed if necessary and is pretty arbitrary. The sum of the curve at
+the exposure values equals $0$ in what `scam` is plotting and equals the
+estimated intercept in what `TMB` is plotting; again, pretty arbitrary
+choice and also the BMD doesn’t depend on this.
+
+## A monotone dose response curve and two arbitrary smooths
+
+Here is an example with a monotone dose-response smooth and two other
+smooths. **Note** the use of the `bs='bs'` for the monotone
+dose-response curve, **not** the `scam`-type `bs='mpd'`.
+
+``` r
+simulate_data_multi <- function(n,params) {
+  xcov <- with(params,seq(xmin,xmax,length.out=n))
+  z1 <- with(params,runif(n,xmin,xmax))
+  z2 <- with(params,runif(n,xmin,xmax))
+
+
+  fz1 <- function(z) sin(2*pi*z)
+  fz2 <- function(z) cos(2*pi*z)
+  # fz2 <- function(z) dnorm(2*z-.5)/dnorm(0)
+
+
+
+  with(params,data.frame(y = rnorm(n,f(xcov)+fz1(z1)+fz2(z2),sigma),x = xcov,z1=z1,z2=z2))
+}
+
+
+set.seed(472398)
+params3 <- set_parameters_mono(scale=5,sigma=.5,p0=.01,BMR=.01,knots=10)
+dat3 <- simulate_data_multi(500,params3)
+
+mod2_tmb <- benchmark_dose_tmb(
+  monosmooths = list(s(x,bs='bs')),
+  smooths = list(s(z1,bs='bs'),s(z2,bs='bs')),
+  linearterms = NULL,
+  data = dat3,
+  exposure = 'x',
+  response = 'y',
+  x0 = 0,
+  p0 = .01,
+  BMR = .01,
+  verbose = TRUE,
+  eps = 1e-06,
+  maxitr = 10,
+  bayes_boot = 1e03
+)
+
+summary(mod2_tmb)
+```
+
+    ## ---
+    ## Dose-response model summary:
+    ## ---
+    ## [1] "Monotone Additive Model fit using Laplace-Approximate Marginal Likelihood in TMB"
+    ## ---
+    ## Benchmark dose summary:
+    ## ---
+    ##     bmd   bmdl
+    ## 1 0.026 0.0142
+    ## ---
+
+``` r
+params3$xb # True BMD
+```
+
+    ## [1] 0.02930584
+
+The `plot` method works a little bit different: since there is more than
+one curve to plot, it will use the same `Hit <Return> to see next plot`
+thing that other packages do.
+
+``` r
+plot(mod2_tmb)
+```
+
+![](README_files/figure-gfm/multismoothplot-1.png)<!-- -->![](README_files/figure-gfm/multismoothplot-2.png)<!-- -->![](README_files/figure-gfm/multismoothplot-3.png)<!-- -->
+
+You will probably want finer control over the plot data, to make them
+look nice. You can call `plot` with `plot=FALSE` (sorry for the stupid
+naming) to get the data for the plot, and then make the plot(s) yourself
+so you can add titles and so on:
+
+``` r
+plotdata <- plot(mod2_tmb,plot=FALSE)
+length(plotdata)
+```
+
+    ## [1] 3
+
+``` r
+Map(names,plotdata)
+```
+
+    ## $mono
+    ## [1] "x"        "fitted"   "estimate" "lower"    "upper"   
+    ## 
+    ## $smooth_1
+    ## [1] "x"        "fitted"   "estimate" "lower"    "upper"   
+    ## 
+    ## $smooth_2
+    ## [1] "x"        "fitted"   "estimate" "lower"    "upper"
+
+``` r
+# Plot the monontone smooth
+with(plotdata[[1]],plot(x,fitted[ ,1],type='l',col=scales::alpha('lightgrey',0.2),xlim = range(x),ylim = c(min(lower),max(upper)),main = "My custom plot title",xlab = "Exposure",ylab = "Response"))
+M <- 100 # Or whatever
+for (i in 2:M)
+  with(plotdata[[1]],graphics::lines(x,fitted[ ,i],col=scales::alpha('lightgrey',0.2)))
+
+with(plotdata[[1]],graphics::lines(x,estimate))
+with(plotdata[[1]],graphics::lines(x,lower,lty='dashed'))
+with(plotdata[[1]],graphics::lines(x,upper,lty='dashed'))
+with(plotdata[[1]],graphics::abline(v = get_bmd(mod2_tmb)[1],lty='longdash'))
+with(plotdata[[1]],graphics::abline(v = get_bmd(mod2_tmb)[2],lty='dotdash'))
+```
+
+![](README_files/figure-gfm/multismoothplotmanual-1.png)<!-- -->
+
+The plot data for the other smooths is identical.

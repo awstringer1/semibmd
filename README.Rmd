@@ -155,3 +155,208 @@ get_approximations(mod)
 # Computation times of each step
 get_computation_times(mod)
 ```
+
+# New Smoothing Method using TMB
+
+The method also is implemented from scratch using the Template Model Builder (TMB; https://kaskr.github.io/adcomp/). The `mgcv` package is still used to set up the bases and penalties, but then all the computations are done using custom code. The following methodological differences are present over `scam`:
+
+- The use of Laplace-approximate marginal likelihood to estimate smoothing parameters instead of generalized cross-validation,
+- The use of full integrated second derivative penalties for the monotone smooths (and other smooths) instead of difference-based P-spline penalties, and
+- The direct application of linear sum-to-zero constraints on the monontone smooth, as opposed to constraint-absorbing reparameterizations. The latter are still used for the non-monotone smooth terms.
+
+Simulations in paper show substantially improved performance of doing this way compared to `scam`.
+
+Here are two examples. Currently the method supports (a) a single monotone smooth, plus (b) any number of non-monotone smooths, and (c) no linear terms (although these could probably be provided as part of the `smooths` argument, I have not tested this). 
+
+## A single monotone dose response curve only
+
+Here is an example of a model with only a single monotone smooth and nothing else. The interface is a bit different and is
+documented. **Note**: important, you use the regular `bs='bs'` basis now for the monotone dose-response smooth,
+**NOT** the `scam`-type `bs='mpd'`. The monotonicity is handled internally and is controlled by you passing
+this formula to the `monosmooths` argument of `benchmark_dose_tmb`.
+```{r monosim}
+set_parameters_mono <- function(scale=1,sigma=1,p0=GLOBAL_P0,BMR=.025,plot_it=FALSE,knots=10) {
+  xmin <- 0
+  xmax <- 1
+  # True function f
+  stopifnot(scale>0)
+  f <- function(x) exp(-x*scale)
+  finv <- function(x) -log(x)/scale
+
+  x0 <- 0
+  stopifnot(x0>=xmin)
+  tau0 <- f(x0) + sigma * qnorm(p0) # Response level
+  stopifnot(abs(pnorm(tau0,f(x0),sigma) - p0) < sqrt(.Machine$double.eps)) # Definition of tau
+
+  A <- qnorm(p0+BMR) - qnorm(p0)
+  # Benchmark dose
+  xb <- finv(f(x0) - sigma*A)
+  stopifnot(abs(pnorm(tau0,f(xb),sigma) - (p0+BMR)) < sqrt(.Machine$double.eps)) # Definition of benchmark dose
+
+  if (plot_it) {
+    curve(f,xmin,xmax,ylim=c(0,1))
+    abline(v=xb,lty='dashed')
+    cat("xb = ",xb,"; f'(xb)/sigma = ",numDeriv::grad(f,xb)/sigma,".\n",sep="")
+  } else {
+    list(
+      xmin = xmin,xmax = xmax,
+      sigma = sigma,
+      p0 = p0,BMR = BMR,
+      f = f,
+      x0 = x0,
+      tau0 = tau0,
+      A = A,
+      xb = xb,
+      knots=knots
+    )
+  }
+}
+
+simulate_data_mono <- function(n,params) {
+  xcov <- with(params,seq(xmin,xmax,length.out=n))
+  with(params,data.frame(y = rnorm(n,f(xcov),sigma),x = xcov))
+}
+
+set.seed(472389)
+library(mgcv) # Need this for s()
+params2 <- set_parameters_mono(scale=1,sigma=.5,p0=.01,BMR=.01,knots=10)
+dat2 <- simulate_data_mono(1000,params2)
+
+mod1_tmb <- benchmark_dose_tmb(
+  monosmooths = list(s(x,bs='bs')),
+  smooths = NULL,
+  linearterms = NULL,
+  data = dat2,
+  exposure = 'x',
+  response = 'y',
+  x0 = 0,
+  p0 = .01,
+  BMR = .01,
+  verbose = FALSE,
+  eps = 1e-06,
+  maxitr = 10,
+  bayes_boot = 1e03
+)
+class(mod1_tmb)
+```
+
+The `benchmark_dose_tmb` function is documented and does the work here. Because the `benchmark_dose_tmb` function 
+returns an object of class `semibmd`, the same `plot`, `summary`, and other methods above work for it:
+
+```{r monosummary}
+summary(mod1_tmb)
+plot(mod1_tmb)
+```
+
+The output of the plot method is expanded a bit: I include a spaghetti plot of posterior samples of the fitted curve to enhance it
+a bit.
+
+We can compare to the same model fit to the same data the old way:
+
+```{r monosimscam}
+mod1_scam <- benchmark_dose(
+  y ~ s(x,bs='mpd'),
+  data = dat2,
+  exposure = 'x',
+  x0 = 0,
+  p0 = .01,
+  BMR = .01,
+  verbose = FALSE,
+  eps = 1e-06,
+  maxitr = 10
+)
+summary(mod1_scam)
+plot(mod1_scam)
+```
+
+We can the the BMD/L are a bit different:
+
+```{r monobmdlcompare}
+get_bmd(mod1_tmb)
+get_bmd(mod1_scam)
+get_all_bmdl(mod1_tmb)
+get_all_bmdl(mod1_scam)
+```
+
+Again, simulations show the `TMB` approach is apparently better. Note that in the `plot` method for `scam`
+the curve is shown **without** the intercept, where for `TMB` it is shown **with** the intercept. This can be changed if
+necessary and is pretty arbitrary. The sum of the curve at the exposure values equals $0$ in what `scam` is plotting
+and equals the estimated intercept in what `TMB` is plotting; again, pretty arbitrary choice and also the BMD doesn't depend on
+this.
+
+## A monotone dose response curve and two arbitrary smooths
+
+Here is an example with a monotone dose-response smooth and two other smooths. **Note** the use of the `bs='bs'` for the
+monotone dose-response curve, **not** the `scam`-type `bs='mpd'`.
+
+```{r multismoothsim}
+simulate_data_multi <- function(n,params) {
+  xcov <- with(params,seq(xmin,xmax,length.out=n))
+  z1 <- with(params,runif(n,xmin,xmax))
+  z2 <- with(params,runif(n,xmin,xmax))
+
+
+  fz1 <- function(z) sin(2*pi*z)
+  fz2 <- function(z) cos(2*pi*z)
+  # fz2 <- function(z) dnorm(2*z-.5)/dnorm(0)
+
+
+
+  with(params,data.frame(y = rnorm(n,f(xcov)+fz1(z1)+fz2(z2),sigma),x = xcov,z1=z1,z2=z2))
+}
+
+
+set.seed(472398)
+params3 <- set_parameters_mono(scale=5,sigma=.5,p0=.01,BMR=.01,knots=10)
+dat3 <- simulate_data_multi(500,params3)
+
+mod2_tmb <- benchmark_dose_tmb(
+  monosmooths = list(s(x,bs='bs')),
+  smooths = list(s(z1,bs='bs'),s(z2,bs='bs')),
+  linearterms = NULL,
+  data = dat3,
+  exposure = 'x',
+  response = 'y',
+  x0 = 0,
+  p0 = .01,
+  BMR = .01,
+  verbose = TRUE,
+  eps = 1e-06,
+  maxitr = 10,
+  bayes_boot = 1e03
+)
+
+summary(mod2_tmb)
+params3$xb # True BMD
+```
+
+The `plot` method works a little bit different: since there is more than one curve 
+to plot, it will use the same `Hit <Return> to see next plot` thing that other packages do.
+
+```{r multismoothplot}
+plot(mod2_tmb)
+```
+
+You will probably want finer control over the plot data, to make them look nice. You
+can call `plot` with `plot=FALSE` (sorry for the stupid naming) to get the data for the plot,
+and then make the plot(s) yourself so you can add titles and so on:
+
+```{r multismoothplotmanual}
+plotdata <- plot(mod2_tmb,plot=FALSE)
+length(plotdata)
+Map(names,plotdata)
+# Plot the monontone smooth
+with(plotdata[[1]],plot(x,fitted[ ,1],type='l',col=scales::alpha('lightgrey',0.2),xlim = range(x),ylim = c(min(lower),max(upper)),main = "My custom plot title",xlab = "Exposure",ylab = "Response"))
+M <- 100 # Or whatever
+for (i in 2:M)
+  with(plotdata[[1]],graphics::lines(x,fitted[ ,i],col=scales::alpha('lightgrey',0.2)))
+
+with(plotdata[[1]],graphics::lines(x,estimate))
+with(plotdata[[1]],graphics::lines(x,lower,lty='dashed'))
+with(plotdata[[1]],graphics::lines(x,upper,lty='dashed'))
+with(plotdata[[1]],graphics::abline(v = get_bmd(mod2_tmb)[1],lty='longdash'))
+with(plotdata[[1]],graphics::abline(v = get_bmd(mod2_tmb)[2],lty='dotdash'))
+```
+
+The plot data for the other smooths is identical.
+
