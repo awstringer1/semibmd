@@ -100,13 +100,15 @@ Type monotonesmoothingmulti(objective_function<Type>* obj) {
   REPORT(Dpsmooth);
 
   // Additive predictor
-  vector<Type> mu = Xmono*gamma + Xsmooth*betasmooth;
-  // Linear constraints
-  Type mumean = mu.mean();
+  vector<Type> mumono = Xmono*gamma;
+  // Linear constraints- manually do it for the monotone smooth
+  Type mumonomean = mumono.mean();
   for (int i=0;i<n;i++) {
-    mu(i) -= mumean;
-    mu(i) += alpha;
+    mumono(i) -= mumonomean;
+    mumono(i) += alpha;
   }
+  // Constraints already absorbed into non-mono smooth basis
+  vector<Type> mu = mumono + Xsmooth*betasmooth;
 
   REPORT(mu);
 

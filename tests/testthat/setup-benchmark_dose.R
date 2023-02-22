@@ -169,8 +169,6 @@ mod1_tmb <- benchmark_dose_tmb(
 
 simulate_data_multi <- function(n,params) {
   xcov <- with(params,seq(xmin,xmax,length.out=n))
-  x1 <- with(params,runif(n,xmin,xmax))
-  x2 <- with(params,runif(n,xmin,xmax))
   z1 <- with(params,runif(n,xmin,xmax))
   z2 <- with(params,runif(n,xmin,xmax))
 
@@ -181,7 +179,7 @@ simulate_data_multi <- function(n,params) {
 
 
 
-  with(params,data.frame(y = rnorm(n,f(xcov)+fz1(z1)+fz2(z2)+2*x1-x2,sigma),x = xcov,x1=x1,x2=x2,z1=z1,z2=z2))
+  with(params,data.frame(y = rnorm(n,f(xcov)+fz1(z1)+fz2(z2),sigma),x = xcov,z1=z1,z2=z2))
 }
 
 
@@ -220,9 +218,9 @@ eps=1e-06
 maxitr=10
 bayes_boot=1e03
 
-# library(scam)
-# testmod <- scam(y ~ s(x,bs='mpd')+s(z1,bs='bs')+s(z2,bs='bs'),data=data,family='gaussian')
-# summary(testmod)
+library(scam)
+testmod <- scam(y ~ s(x,bs='mpd')+s(z1,bs='bs')+s(z2,bs='bs'),data=dat3,family='gaussian')
+summary(testmod)
 
 
 

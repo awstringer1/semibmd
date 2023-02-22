@@ -199,7 +199,7 @@ get_relative_computation_times <- function(object,...) {
 
 # Sampling-based intervals
 # Not exported.
-get_samples <- function(beta,alpha,H,tmbdata,M=1000) {
+get_samples <- function(beta,alpha,H,tmbdata,M=1000,nonmonocoef=NULL) {
   # beta: coefficients
   # alpha: intercept
   # H: full joint hessian
@@ -212,13 +212,20 @@ get_samples <- function(beta,alpha,H,tmbdata,M=1000) {
   Z <- Matrix::solve(Hchol,Z,system="Lt")
   betasamps <- tmbdata$Umono %*% Z[1:d, ]
   betasamps <- sweep(betasamps,1,beta,'+')
+
+  nonmonosamps <- NULL
+  if (!is.null(nonmonocoef)) {
+    idx <- which(colnames(H)%in%c('betaRsmooth','betaFsmooth'))
+    if (length(idx)>0)
+      nonmonosamps <- sweep(Z[idx, ],1,nonmonocoef,'+')
+  }
   # gammasamps <- apply(betasamps,2,get_gamma)
   alphasamps <- Z[d+1, ] + alpha
   # fitted_samps <- tmbdata$X %*% gammasamps
   # colmeans <- colMeans(fitted_samps)
   # fitted_samps <- sweep(fitted_samps,2,colmeans,"-")
   # fitted_samps <- sweep(fitted_samps,2,alphasamps,"+")
-  list(beta = betasamps,alpha=alphasamps)
+  list(beta = betasamps,alpha=alphasamps,nonmonosamps=nonmonosamps)
 }
 
 

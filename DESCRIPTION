@@ -25,7 +25,8 @@ Imports:
     Matrix,
     TMB (>= 1.9.2),
     methods,
-    scales
+    scales,
+    grDevices
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

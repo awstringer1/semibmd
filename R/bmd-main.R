@@ -383,8 +383,8 @@ plot.semibmd <- function(x,plot=TRUE,...) {
 
     xx <- seq(mod$plotinfo$minx,mod$plotinfo$maxx,length.out=1e03)
     preddat <- data.frame(x=xx)
-    # XX <- mgcv::PredictMat(mod$plotinfo$monosmoothobj,preddat)
-    XX <- mgcv::Predict.matrix(mod$plotinfo$monosmoothobj,preddat)
+    XX <- mgcv::PredictMat(mod$plotinfo$monosmoothobj,preddat)
+    # XX <- mgcv::Predict.matrix(mod$plotinfo$monosmoothobj,preddat)
     gammasamps <- apply(mod$plotinfo$samps$beta,2,get_gamma)
     fitted <- XX %*% gammasamps
     colmeans <- colMeans(fitted)
@@ -413,5 +413,45 @@ plot.semibmd <- function(x,plot=TRUE,...) {
     graphics::lines(xx,samp_upper,lty='dashed')
     graphics::abline(v = bmd[1],lty='longdash')
     graphics::abline(v = bmd[2],lty='dotdash')
+
+    # Plot non-monotone smooths
+    if (length(mod$plotinfosmooth)>0) {
+        rstart <- 1 # Counter for betaR
+        rtotal <- Reduce(sum,Map('[[',mod$plotinfosmooth,'r'))
+        fstart <- rtotal+1
+
+        for (j in 1:length(mod$plotinfosmooth)) {
+          grDevices::devAskNewPage(TRUE)
+          plotinfo <- mod$plotinfosmooth[[j]]
+          xx <- seq(plotinfo$minx,plotinfo$maxx,length.out=1e03)
+          preddat <- data.frame(x=xx)
+          colnames(preddat) <- plotinfo$smoothobj$term
+          XX <- mgcv::PredictMat(plotinfo$smoothobj,preddat)
+          rend <- rstart + plotinfo$r - 1
+          fend <- plotinfo$d - plotinfo$r + fstart - 1
+          # Use samples object from the monotone smooth
+          coefRsamps <- mod$plotinfo$samps$nonmonosamps[rstart:rend, ,drop=FALSE]
+          coefFsamps <- mod$plotinfo$samps$nonmonosamps[fstart:fend, ,drop=FALSE]
+          coefsamps <- plotinfo$U %*% rbind(coefRsamps,coefFsamps)
+          rstart <- rend+1
+          fstart <- fend+1
+
+          fitted <- XX %*% coefsamps
+          colmeans <- Matrix::colMeans(fitted)
+          fitted <- sweep(fitted,2,colmeans,"-")
+          # fitted <- sweep(fitted,2,mod$plotinfo$samps$alpha,"+")
+          samp_lower <- tryCatch(apply(fitted,1,stats::quantile,probs=.025),error = function(e) e)
+          samp_upper <- tryCatch(apply(fitted,1,stats::quantile,probs=.975),error = function(e) e)
+          samp_median <- tryCatch(apply(fitted,1,stats::median),error = function(e) e)
+
+          plot(xx,fitted[ ,1],type='l',col=scales::alpha('lightgrey',0.2),xlim = range(xx),ylim = c(min(samp_lower),max(samp_upper)))
+          for (i in 2:M)
+            graphics::lines(xx,fitted[ ,i],col=scales::alpha('lightgrey',0.2))
+
+          graphics::lines(xx,samp_median)
+          graphics::lines(xx,samp_lower,lty='dashed')
+          graphics::lines(xx,samp_upper,lty='dashed')
+      }
+    }    
   }
 }

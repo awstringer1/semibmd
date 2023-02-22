@@ -80,7 +80,7 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
   # Monotone smooths
   if (is.null(monosmooths)) stop("At least one monotone smoothing variable must be specified.")
   if (length(monosmooths)>1) stop("Only one monotone smooth supported at this time.")
-  monosmoothobj <- mgcv::smoothCon(monosmooths[[1]],data=data,absorb.cons=TRUE,scale.penalty=TRUE)[[1]]
+  monosmoothobj <- mgcv::smoothCon(monosmooths[[1]],data=data,absorb.cons=FALSE,scale.penalty=TRUE)[[1]]
   Smono <- monosmoothobj$S[[1]]
   Xmono <- monosmoothobj$X
   ccmono <- colSums(Xmono)
@@ -213,11 +213,11 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
     out$info$errors$jointhessian <- fullprec
     return(out)
   }
-  # randomidx <- template_inner$env$random
-  # paramdimfull <- ncol(fullprec)
-  # paramdimrandom <- length(randomidx)
-  # hyperidx <- (paramdimrandom+1):(paramdimfull)
-  # randprec <- fullprec[randomidx,randomidx]
+  randomidx <- template_inner$env$random
+  paramdimfull <- ncol(fullprec)
+  paramdimrandom <- length(randomidx)
+  hyperidx <- (paramdimrandom+1):(paramdimfull)
+  randprec <- fullprec[randomidx,randomidx]
 
   # UPDATE: index out the monotone smooths and the intercept, not all random effects
   monoidx <- which(names(randest) %in% c("betaRmono","betaFmono","alpha"))
@@ -230,7 +230,12 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
 
   tm <- Sys.time()
   # samps <- tryCatch(get_samples(betaest,alphaest,randprec,tmbdata,M=bayes_boot),error = function(e) e)
-  samps <- tryCatch(get_samples(betaest,alphaest,fullprec,tmbdata,M=bayes_boot),error = function(e) e)
+  if (nonmono) {
+    nonmonocoefest <- randest[names(randest) %in% c("betaRsmooth","betaFsmooth")]
+    samps <- tryCatch(get_samples(betaest,alphaest,randprec,tmbdata,M=bayes_boot,nonmonocoef=nonmonocoefest),error = function(e) e)
+  } else {
+    samps <- tryCatch(get_samples(betaest,alphaest,randprec,tmbdata,M=bayes_boot),error = function(e) e)
+  }
   if (inherits(samps,'condition')) {
     if (verbose) cat("Received the following error when drawing posterior samples:",samps$message,".\n")
     out$info$errors$posteriorsamples <- samps
@@ -290,7 +295,11 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
   ## Delta ##
   tm <- Sys.time()
   gammasamps <- apply(samps$beta,2,get_gamma)
+  # gammameans <- colMeans(gammasamps)
+  # gammasampsC <- sweep(gammasamps,2,gammameans,'-')
   V <- stats::cov(t(gammasamps)) # This is surprisingly fast
+  # V <- stats::cov(t(gammasampsC)) # This is surprisingly fast
+
   kx <- knotindex(bmd_est,tmbdata$smoothobj$knots)
   bx0 <- Bsplinevec(x0,tmbdata$smoothobj$knots,4)
   Vn <- Vx_cpp(bmd_est,V,tmbdata$smoothobj$knots,bx0,sigmaest)
@@ -335,8 +344,10 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
       out$model$plotinfosmooth[[j]] <- list(
         minx = min(data[[tmpvar]]),
         maxx = max(data[[tmpvar]]),
-        monosmoothobj = smoothobj[[j]],
-        samps = samps # TODO
+        smoothobj = smoothobj[[j]],
+        U = U[[j]],
+        r = r[[j]],
+        d = d[[j]]
       )
     }
   }
