@@ -224,5 +224,76 @@ summary(testmod)
 
 
 
+## By variables ##
+
+simulate_data_by <- function(n,params) {
+  # Will return data of size 2n
+  xcov <- rep(with(params,seq(xmin,xmax,length.out=n)),2)
+  z <- with(params,runif(2*n,xmin,xmax))
+  id <- rep(c(1,2),each=n)
+
+
+  fz1 <- function(z) sin(2*pi*z)
+  fz2 <- function(z) cos(2*pi*z)
+
+  dat <- data.frame(
+    x = xcov,
+    z = z,
+    id = factor(id)
+  )
+  mu <- params$f(xcov)
+  mu[id==1] <- mu[id==1] + fz1(z[id==1])
+  mu[id==2] <- mu[id==2] + fz2(z[id==2])
+  dat$y = rnorm(2*n,mu,params$sigma)
+
+  dat
+}
+
+set.seed(8732)
+dat4 <- simulate_data_by(500,params3)
+
+
+monosmooths <- list(s(x,bs='bs'))
+smooths <- list(s(z,bs='bs',by=id))
+linearterms <- NULL
+data <- dat4
+exposure <- 'x'
+response <- 'y'
+x0 <- 0
+p0 <- .01
+BMR <- .01
+verbose=FALSE
+eps=1e-06
+maxitr=10
+bayes_boot=1e03
+
+
+mod3_tmb <- benchmark_dose_tmb(
+  monosmooths = list(s(x,bs='bs')),
+  smooths = list(s(z,bs='bs',by=id)),
+  linearterms = NULL,
+  data = dat4,
+  exposure = 'x',
+  response = 'y',
+  x0 = 0,
+  p0 = .01,
+  BMR = .01,
+  verbose = TRUE,
+  eps = 1e-06,
+  maxitr = 10,
+  bayes_boot = 1e03
+)
+summary(mod3_tmb)
+
+
+
+
+
+
+
+
+
+
+
 
 

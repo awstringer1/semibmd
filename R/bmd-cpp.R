@@ -34,7 +34,7 @@
 benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,response,x0,p0,BMR,verbose=FALSE,eps=1e-06,maxitr=10,bayes_boot=1e03) {
   ## Create output object ##
   out <- list(
-    info = list(errors = list(),bmdl_alternatives = list(),computation_time = list())
+    info = list(errors = list(),bmdl_alternatives = list(),computation_time = list(),data = data)
   )
   class(out) <- "semibmd"
 
@@ -54,10 +54,10 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
     nonmono <- 1L
     for (j in 1:length(smooths)) {
       # TODO: list processing for multiple variables
-      smoothobj[[j]] <- mgcv::smoothCon(smooths[[j]],data=data,absorb.cons=TRUE,scale.penalty=TRUE)[[1]]
-      S[[j]] <- smoothobj[[j]]$S[[1]]
-      X[[j]] <- smoothobj[[j]]$X
-      cc[[j]] <- colSums(smoothobj[[j]]$X)
+      smoothobj[[j]] <- mgcv::smoothCon(smooths[[j]],data=data,absorb.cons=TRUE,scale.penalty=TRUE)
+      S[[j]] <- Matrix::bdiag(Map('[[',Map('[[',smoothobj[[j]],'S'),1))
+      X[[j]] <- Reduce(cbind,Map('[[',smoothobj[[j]],'X'))
+      cc[[j]] <- colSums(X[[j]])
       EE[[j]] <- eigen(S[[j]])
       r[[j]] <- sum(EE[[j]]$values>1e-08)
       d[[j]] <- length(EE[[j]]$values)

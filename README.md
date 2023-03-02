@@ -1,7 +1,7 @@
 Semi-parametric Benchmark Dosing with semibmd
 ================
 Alex Stringer
-2023-02-22
+2023-03-01
 
 # Install the `semibmd` package
 
@@ -34,12 +34,12 @@ head(dat)
 ```
 
     ##            y           x        x1        x2
-    ## 1  3.1527499 0.000000000 0.9931191 0.8112452
-    ## 2  3.5555435 0.001001001 0.5799711 0.3186139
-    ## 3  1.5529567 0.002002002 0.1273123 0.2089178
-    ## 4  0.7761285 0.003003003 0.4893187 0.9088333
-    ## 5 -0.6459241 0.004004004 0.6541552 0.8770516
-    ## 6 -0.1262612 0.005005005 0.3598763 0.9591376
+    ## 1  1.9994748 0.000000000 0.2244994 0.4272809
+    ## 2  3.5659719 0.001001001 0.6792357 0.5067146
+    ## 3  2.0950913 0.002002002 0.5415578 0.4952741
+    ## 4  2.0352977 0.003003003 0.9846344 0.6402956
+    ## 5 -0.2218419 0.004004004 0.6608238 0.4663065
+    ## 6  0.5493814 0.005005005 0.6450404 0.8538231
 
 The exposure variable is `x` and there are two additional variables `x1`
 and `x2` that can be included in the model.
@@ -98,26 +98,26 @@ summary(mod)
     ## 
     ## Parametric coefficients:
     ##             Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)   0.7159     0.2979   2.403   0.0164 *  
-    ## x1            2.0824     0.1102  18.894  < 2e-16 ***
-    ## x2           -0.8446     0.1079  -7.826 1.28e-14 ***
+    ## (Intercept)   0.8613     0.3026   2.846  0.00451 ** 
+    ## x1            1.9638     0.1081  18.174  < 2e-16 ***
+    ## x2           -0.9853     0.1087  -9.063  < 2e-16 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Approximate significance of smooth terms:
     ##        edf Ref.df     F  p-value    
-    ## s(x) 1.993  2.442 13.32 4.27e-07 ***
+    ## s(x) 2.006  2.455 14.83 7.62e-08 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## R-sq.(adj) =  0.3168   Deviance explained = 31.9%
-    ## GCV score = 0.99588  Scale est. = 0.99091   n = 1000
+    ## R-sq.(adj) =  0.3108   Deviance explained = 31.4%
+    ## GCV score = 0.99827  Scale est. = 0.99328   n = 1000
     ## 
     ## ---
     ## Benchmark dose summary:
     ## ---
     ##      bmd   bmdl
-    ## 1 0.2653 0.1182
+    ## 1 0.2588 0.1149
     ## ---
 
 ``` r
@@ -167,25 +167,25 @@ summary(mod)
     ## 
     ## Parametric coefficients:
     ##             Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)  0.03150    0.08626   0.365    0.715    
-    ## x1           2.08357    0.11019  18.909  < 2e-16 ***
-    ## x2          -0.84157    0.10790  -7.800 1.56e-14 ***
+    ## (Intercept)  0.16284    0.08297   1.963     0.05 *  
+    ## x1           1.96751    0.10818  18.188   <2e-16 ***
+    ## x2          -0.98329    0.10869  -9.046   <2e-16 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## Approximate significance of smooth terms:
-    ##       edf Ref.df     F  p-value    
-    ## s(x) 2.17  2.698 12.37 1.28e-06 ***
+    ##        edf Ref.df     F  p-value    
+    ## s(x) 2.196  2.731 12.28 1.29e-06 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## R-sq.(adj) =  0.317   Deviance explained =   32%
-    ## GCV = 0.99585  Scale est. = 0.99071   n = 1000
+    ## R-sq.(adj) =  0.311   Deviance explained = 31.4%
+    ## GCV = 0.99835  Scale est. = 0.99317   n = 1000
     ## ---
     ## Benchmark dose summary:
     ## ---
     ##      bmd   bmdl
-    ## 1 0.3216 0.1794
+    ## 1 0.3158 0.1758
     ## ---
 
 ``` r
@@ -232,7 +232,7 @@ various getter functions to get everything:
 get_bmd(mod)
 ```
 
-    ## [1] 0.3215382 0.1793811
+    ## [1] 0.3158169 0.1757731
 
 ``` r
 # All BMDLs:
@@ -240,7 +240,7 @@ get_all_bmdl(mod)
 ```
 
     ##      score      delta  bootstrap 
-    ## 0.17938111 0.09711315 0.17856656
+    ## 0.17577313 0.09277874 0.18861372
 
 # Errors and diagnostics
 
@@ -267,14 +267,14 @@ get_uxb(mod)
 ```
 
     ##            1 
-    ## 1.123049e-09
+    ## 1.799314e-09
 
 ``` r
 get_psixl(mod)
 ```
 
     ##               1
-    ## 1 -4.634262e-10
+    ## 1 -4.356204e-10
 
 ``` r
 # Approximation quantities: variance and derivative of U at BMD (used for delta method)
@@ -282,15 +282,15 @@ get_approximations(mod)
 ```
 
     ##         Vn        Upn 
-    ## 0.01031609 0.88702184
+    ## 0.01040667 0.89644726
 
 ``` r
 # Computation times of each step
 get_computation_times(mod)
 ```
 
-    ##       model         bmd  bmdl_score  bmdl_delta   bmdl_boot       total 
-    ## 0.035870075 0.011064768 0.015925884 0.006181002 9.743435144 9.812476873
+    ##        model          bmd   bmdl_score   bmdl_delta    bmdl_boot        total 
+    ##  0.032787085  0.009737968  0.014474869  0.005775928 10.452320099 10.515095949
 
 # New Smoothing Method using TMB
 
@@ -630,3 +630,80 @@ with(plotdata[[1]],graphics::abline(v = get_bmd(mod2_tmb)[2],lty='dotdash'))
 ![](README_files/figure-gfm/multismoothplotmanual-1.png)<!-- -->
 
 The plot data for the other smooths is identical.
+
+## By Variables
+
+`by` variables in smooths are handled by `mgcv` internally, and the
+necessary modifications have been made to `semibmd::benchmark_dose_tmb`
+to handle them. Here is an example.
+
+``` r
+simulate_data_by <- function(n,params) {
+  # Will return data of size 2n
+  xcov <- rep(with(params,seq(xmin,xmax,length.out=n)),2)
+  z <- with(params,runif(2*n,xmin,xmax))
+  id <- rep(c(1,2),each=n)
+
+
+  fz1 <- function(z) sin(2*pi*z)
+  fz2 <- function(z) cos(2*pi*z)
+
+  dat <- data.frame(
+    x = xcov,
+    z = z,
+    id = factor(id)
+  )
+  mu <- params$f(xcov)
+  mu[id==1] <- mu[id==1] + fz1(z[id==1])
+  mu[id==2] <- mu[id==2] + fz2(z[id==2])
+  dat$y = rnorm(2*n,mu,params$sigma)
+
+  dat
+}
+
+set.seed(8732)
+dat4 <- simulate_data_by(500,params3) # 2 groups, 500 per group
+mod3_tmb <- benchmark_dose_tmb(
+  monosmooths = list(s(x,bs='bs')),
+  smooths = list(s(z,bs='bs',by=id)),
+  linearterms = NULL,
+  data = dat4,
+  exposure = 'x',
+  response = 'y',
+  x0 = 0,
+  p0 = .01,
+  BMR = .01,
+  verbose = TRUE,
+  eps = 1e-06,
+  maxitr = 10,
+  bayes_boot = 1e03
+)
+summary(mod3_tmb)
+```
+
+    ## ---
+    ## Dose-response model summary:
+    ## ---
+    ## [1] "Monotone Additive Model fit using Laplace-Approximate Marginal Likelihood in TMB"
+    ## ---
+    ## Benchmark dose summary:
+    ## ---
+    ##      bmd   bmdl
+    ## 1 0.0229 0.0146
+    ## ---
+
+``` r
+params3$xb
+```
+
+    ## [1] 0.02930584
+
+The `plot` method will plot the smooths for each factor level completely
+separately. I can change this, I just did it this way because I didn’t
+have a better idea.
+
+``` r
+plot(mod3_tmb)
+```
+
+![](README_files/figure-gfm/plot-by-1.png)<!-- -->![](README_files/figure-gfm/plot-by-2.png)<!-- -->![](README_files/figure-gfm/plot-by-3.png)<!-- -->

@@ -423,12 +423,23 @@ plot.semibmd <- function(x,plot=TRUE,...) {
         fstart <- rtotal+1
 
         for (j in 1:length(mod$plotinfosmooth)) {
-          grDevices::devAskNewPage(TRUE)
           plotinfo <- mod$plotinfosmooth[[j]]
           xx <- seq(plotinfo$minx,plotinfo$maxx,length.out=1e03)
+          nn <- length(xx)
+          pp <- length(plotinfo$smoothobj)
           preddat <- data.frame(x=xx)
-          colnames(preddat) <- plotinfo$smoothobj$term
-          XX <- mgcv::PredictMat(plotinfo$smoothobj,preddat)
+          colnames(preddat) <- plotinfo$smoothobj[[1]]$term
+          if (plotinfo$smoothobj[[1]]$by != 'NA') {
+            tmpX <- list()
+            for (l in 1:length(plotinfo$smoothobj)) {
+              preddat[[plotinfo$smoothobj[[l]]$by]] <- factor(plotinfo$smoothobj[[l]]$by.level)
+              tmpX[[l]] <- mgcv::PredictMat(plotinfo$smoothobj[[l]],preddat)
+            }
+            XX <- Matrix::bdiag(tmpX)
+          } else {
+            XX <- mgcv::PredictMat(plotinfo$smoothobj[[1]],preddat)
+          }
+          
           rend <- rstart + plotinfo$r - 1
           fend <- plotinfo$d - plotinfo$r + fstart - 1
           # Use samples object from the monotone smooth
@@ -447,13 +458,18 @@ plot.semibmd <- function(x,plot=TRUE,...) {
           samp_median <- tryCatch(apply(fitted,1,stats::median),error = function(e) e)
 
           if (plot) {
-            plot(xx,fitted[ ,1],type='l',col=scales::alpha('lightgrey',0.2),xlim = range(xx),ylim = c(min(samp_lower),max(samp_upper)))
-            for (i in 2:M)
-              graphics::lines(xx,fitted[ ,i],col=scales::alpha('lightgrey',0.2))
+            idx <- 1:nn
+            for (l in 1:pp) {
+              grDevices::devAskNewPage(TRUE)
+              plot(xx,fitted[idx,1],type='l',col=scales::alpha('lightgrey',0.2),xlim = range(xx),ylim = c(min(samp_lower),max(samp_upper)))
+              for (i in 2:M)
+                graphics::lines(xx,fitted[idx,i],col=scales::alpha('lightgrey',0.2))
 
-            graphics::lines(xx,samp_median)
-            graphics::lines(xx,samp_lower,lty='dashed')
-            graphics::lines(xx,samp_upper,lty='dashed')
+              graphics::lines(xx,samp_median[idx])
+              graphics::lines(xx,samp_lower[idx],lty='dashed')
+              graphics::lines(xx,samp_upper[idx],lty='dashed')
+              idx <- idx + nn
+            }
           } else {
             out <- c(out,list(list(
               x = xx,
