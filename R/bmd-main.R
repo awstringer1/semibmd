@@ -383,6 +383,7 @@ plot.semibmd <- function(x,plot=TRUE,...) {
 
     xx <- seq(mod$plotinfo$minx,mod$plotinfo$maxx,length.out=1e03)
     preddat <- data.frame(x=xx)
+    colnames(preddat) <- mod$plotinfo$monosmoothobj$term
     XX <- mgcv::PredictMat(mod$plotinfo$monosmoothobj,preddat)
     # XX <- mgcv::Predict.matrix(mod$plotinfo$monosmoothobj,preddat)
     gammasamps <- apply(mod$plotinfo$samps$beta,2,get_gamma)
@@ -439,7 +440,7 @@ plot.semibmd <- function(x,plot=TRUE,...) {
           } else {
             XX <- mgcv::PredictMat(plotinfo$smoothobj[[1]],preddat)
           }
-          
+
           rend <- rstart + plotinfo$r - 1
           fend <- plotinfo$d - plotinfo$r + fstart - 1
           # Use samples object from the monotone smooth
@@ -480,7 +481,7 @@ plot.semibmd <- function(x,plot=TRUE,...) {
             )))
           }
       }
-    }    
+    }
     if (!plot) {
       names(out) <- c("mono",paste0("smooth_",1:length(mod$plotinfosmooth)))
       return(out)
