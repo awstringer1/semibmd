@@ -4,7 +4,7 @@
 #include <TMB.hpp>
 #include "monotonesmoothing.hpp"
 #include "monotonesmoothingmulti.hpp"
-// tmp2
+
 template<class Type>
 Type objective_function<Type>::operator() () {
   DATA_STRING(model);
