@@ -26,4 +26,9 @@ test_that("benchmark dosing works with TMB", {
   expect_named(get_computation_times(mod2_tmb),c('model','posterior_samples','bmd_samples','bmd_estimate','bmdl_delta','bmdl_score','plot_information','total'))
   expect_length(get_computation_times(mod2_tmb),8)
 
+
+  # Data scaling
+  expect_lt(abs(get_bmd(mod_noscale)[1] - get_bmd(mod_scale)[1]),1e-03)
+  expect_lt(sum(abs(get_all_bmdl(mod_noscale) - get_all_bmdl(mod_scale))),1e-03)
+
 })

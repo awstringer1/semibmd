@@ -22,16 +22,36 @@
 #' @param bayes_boot Nonegative integer, how many Bayesian "bootstrap" iterations to do; means how many posterior draws to base
 #' sample-based inferences for the BMD(L) off of.
 #' Must be a positive integer.
+#' @param scale_data Logical, default \code{FALSE}: should the response variable be scaled to have mean 0 and standard deviation 1? See Details.
 #'
 #' @note The BMDL assigned to the \code{bmdl} output object slot, and accessed via \code{get_bmd()} etc,
 #' is based on Bayesian bootstrapping
+#'
+#' @details Scaling the response variable is a
+#' typical operation in regression with continuous response, but it does change the estimation of the BMD(L).
+#' It is recommended to input your data on whatever scale is scientifically meaningful, and then choose
+#' \code{scale_data=TRUE} to scale the data internally and account for this operation in the estimation of BMD(L).
 #'
 #' @importFrom mgcv s
 #'
 #' @rawNamespace useDynLib(semibmd, .registration=TRUE); useDynLib(semibmd_TMBExports)
 #'
 #' @export
-benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,response,x0,p0,BMR,verbose=FALSE,eps=1e-06,maxitr=10,bayes_boot=1e03) {
+benchmark_dose_tmb <- function(monosmooths,
+                               smooths,
+                               linearterms,
+                               data,
+                               exposure,
+                               response,
+                               x0,
+                               p0,
+                               BMR,
+                               verbose=FALSE,
+                               eps=1e-06,
+                               maxitr=10,
+                               bayes_boot=1e03,
+                               scale_data = FALSE
+) {
   ## Create output object ##
   out <- list(
     info = list(errors = list(),bmdl_alternatives = list(),computation_time = list(),data = data)
@@ -44,6 +64,12 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
 
 
   p <- 4 # B-Spline order
+
+  if (scale_data) {
+    mean_response <- mean(data[[response]])
+    sd_response <- stats::sd(data[[response]])
+    data[[response]] <- (data[[response]] - mean_response)/sd_response
+  }
 
   ## Setup Model Fitting Quantities ##
   # NON-monotone smooths
@@ -181,6 +207,7 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
   }
 
   sigmaest <- exp(-.5*opt1$par[1])
+  # if (scale_data) sigmaest <- sigmaest*sd_response
   lambdaest <- exp(opt1$par[2])
   if (nonmono) {
     lambdasmoothest <- exp(opt1$par[3:length(opt1$par)])
@@ -201,10 +228,14 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
   ## Estimates ##
   ## Everything here still pertains only to the monotone smooth ##
   randest <- with(template_inner$env,last.par[random])
+  alphaest <- randest['alpha']
+  # if (scale_data) {
+  #   alphaest <- sd_response*alphaest+mean_response # Add the mean back onto the intercept, only
+  #   randest <- sd_response*randest
+  # }
   betaRFest <- randest[names(randest) %in% c("betaRmono","betaFmono")]
   betaest <- as.numeric(tmbdata$Umono %*% betaRFest)
-  gammaest <- get_gamma(betaest)
-  alphaest <- randest['alpha']
+  gammaest <- get_gamma(betaest) # Do this after scaling
 
   ## Standard Errors ##
   fullprec <- tryCatch(TMB::sdreport(template_inner,getJointPrecision=TRUE)$jointPrecision,error = function(e) e)
@@ -213,6 +244,11 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
     out$info$errors$jointhessian <- fullprec
     return(out)
   }
+  if (scale_data) {
+    # divide PRECISION matrix by square of sd_response, i.e. multiply variance matrix by variance of response.
+    # fullprec <- (1/sd_response^2)*fullprec
+  }
+
   randomidx <- template_inner$env$random
   paramdimfull <- ncol(fullprec)
   paramdimrandom <- length(randomidx)
@@ -303,6 +339,7 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
   kx <- knotindex(bmd_est,tmbdata$smoothobj$knots)
   bx0 <- Bsplinevec(x0,tmbdata$smoothobj$knots,4)
   Vn <- Vx_cpp(bmd_est,V,tmbdata$smoothobj$knots,bx0,sigmaest)
+  # if (scale_data) Vn <- Vn * (sd_response^2)
   dt_tmp <- as.numeric(difftime(Sys.time(),tm,units='secs'))
 
   tm <- Sys.time()
@@ -353,6 +390,36 @@ benchmark_dose_tmb <- function(monosmooths,smooths,linearterms,data,exposure,res
   }
   dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
   out$info$computation_time$plot_information <- dt
+
+  # Add the U(x) and Psi(x) functions to the output
+  Ux <- function(x) {
+    knots <- tmbdata$smoothobj$knots
+    kx <- knotindex(x,knots)
+    k0 <- knotindex(x0,knots)
+    fx0 <- deBoor(x0,k0,knots,gammaest,4)
+    Ux_cpp(x,gammaest,knots,kx,fx0,sigmaest,A)
+  }
+  Uxv <- function(x) {
+    out <- numeric(length(x))
+    for (i in 1:length(out)) out[i] <- Ux(x[i])
+    out
+  }
+
+  Psix <- function(x) {
+    knots <- tmbdata$smoothobj$knots
+    kx <- knotindex(x,knots)
+    k0 <- knotindex(x0,knots)
+    fx0 <- deBoor(x0,k0,knots,gammaest,4)
+    bx0 <- Bsplinevec(x0,knots,4)
+
+    Psix_cpp(x,gammaest,V,knots,kx,fx0,bx0,sigmaest,A)
+  }
+  Psixv <- function(x) {
+    out <- numeric(length(x))
+    for (i in 1:length(out)) out[i] <- Psix(x[i])
+    out
+  }
+  out$info$functions <- list(Ux = Uxv,Psix = Psixv)
 
   out
 }

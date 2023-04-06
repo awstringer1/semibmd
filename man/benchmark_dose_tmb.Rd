@@ -17,7 +17,8 @@ benchmark_dose_tmb(
   verbose = FALSE,
   eps = 1e-06,
   maxitr = 10,
-  bayes_boot = 1000
+  bayes_boot = 1000,
+  scale_data = FALSE
 )
 }
 \arguments{
@@ -50,10 +51,18 @@ use B-Spline bases.}
 \item{bayes_boot}{Nonegative integer, how many Bayesian "bootstrap" iterations to do; means how many posterior draws to base
 sample-based inferences for the BMD(L) off of.
 Must be a positive integer.}
+
+\item{scale_data}{Logical, default \code{FALSE}: should the response variable be scaled to have mean 0 and standard deviation 1? See Details.}
 }
 \description{
 Benchmark dosing based on a custom implementation of monotone B-spline-based additive models
 using TMB and Rcpp
+}
+\details{
+Scaling the response variable is a
+typical operation in regression with continuous response, but it does change the estimation of the BMD(L).
+It is recommended to input your data on whatever scale is scientifically meaningful, and then choose
+\code{scale_data=TRUE} to scale the data internally and account for this operation in the estimation of BMD(L).
 }
 \note{
 The BMDL assigned to the \code{bmdl} output object slot, and accessed via \code{get_bmd()} etc,

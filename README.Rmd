@@ -417,4 +417,75 @@ I just did it this way because I didn't have a better idea.
 plot(mod3_tmb)
 ```
 
+# Data Centering and Scaling
+
+Centering and scaling continuous data is common, and is often done internally by regression
+software for numerical stability. Centering the data does not affect BMD estimation, but 
+scaling does, if not accounted for. Example:
+
+```{r scaling-example-data}
+dat_noscale <- dat_shift <- dat_scale <- dat3
+dat_shift$y <- with(dat_scale,y-mean(y))
+dat_scale$y <- scale(dat_scale$y)
+
+with(dat_noscale,c(mean(y),sd(y)))
+with(dat_shift,c(mean(y),sd(y)))
+with(dat_scale,c(mean(y),sd(y)))
+
+mod_noscale <- benchmark_dose_tmb(
+  monosmooths = list(s(x,bs='bs')),
+  smooths = list(s(z1,bs='bs'),s(z2,bs='bs')),
+  linearterms = NULL,
+  data = dat_noscale,
+  exposure = 'x',
+  response = 'y',
+  x0 = 0,
+  p0 = .01,
+  BMR = .01,
+  verbose = TRUE,
+  eps = 1e-06,
+  maxitr = 10,
+  bayes_boot = 1e03
+)
+
+mod_shift <- benchmark_dose_tmb(
+  monosmooths = list(s(x,bs='bs')),
+  smooths = list(s(z1,bs='bs'),s(z2,bs='bs')),
+  linearterms = NULL,
+  data = dat_shift,
+  exposure = 'x',
+  response = 'y',
+  x0 = 0,
+  p0 = .01,
+  BMR = .01,
+  verbose = TRUE,
+  eps = 1e-06,
+  maxitr = 10,
+  bayes_boot = 1e03
+)
+
+mod_scale <- benchmark_dose_tmb(
+  monosmooths = list(s(x,bs='bs')),
+  smooths = list(s(z1,bs='bs'),s(z2,bs='bs')),
+  linearterms = NULL,
+  data = dat_scale,
+  exposure = 'x',
+  response = 'y',
+  x0 = 0,
+  p0 = .01,
+  BMR = .01,
+  verbose = TRUE,
+  eps = 1e-06,
+  maxitr = 10,
+  bayes_boot = 1e03
+)
+
+get_bmd(mod_noscale)
+get_bmd(mod_shift)
+get_bmd(mod_scale)
+get_all_bmdl(mod_noscale)
+get_all_bmdl(mod_shift)
+get_all_bmdl(mod_scale)
+
+```
 

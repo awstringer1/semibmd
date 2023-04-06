@@ -285,12 +285,92 @@ mod3_tmb <- benchmark_dose_tmb(
 )
 summary(mod3_tmb)
 
+## Data scaling
+
+dat_scale <- dat3
+dat_scale$y <- scale(dat_scale$y)
+
+mod_noscale <- benchmark_dose_tmb(
+  monosmooths = list(s(x,bs='bs')),
+  smooths = list(s(z1,bs='bs'),s(z2,bs='bs')),
+  linearterms = NULL,
+  data = dat3,
+  exposure = 'x',
+  response = 'y',
+  x0 = 0,
+  p0 = .01,
+  BMR = .01,
+  verbose = TRUE,
+  eps = 1e-06,
+  maxitr = 10,
+  bayes_boot = 1e04
+)
+
+mod_scale <- benchmark_dose_tmb(
+  monosmooths = list(s(x,bs='bs')),
+  smooths = list(s(z1,bs='bs'),s(z2,bs='bs')),
+  linearterms = NULL,
+  data = dat3,
+  exposure = 'x',
+  response = 'y',
+  x0 = 0,
+  p0 = .01,
+  BMR = .01,
+  verbose = TRUE,
+  eps = 1e-06,
+  maxitr = 10,
+  bayes_boot = 1e04,
+  scale_data = TRUE
+)
+
+# curve(mod_scale$info$functions$Ux(x),-.5,.5)
+# abline(h=0,lty='dashed')
+# abline(v=get_bmd(mod_scale)[1],lty='dashed')
+#
+# curve(mod_scale$info$functions$Psix(x),0,.5)
+# abline(h=0,lty='dashed')
+# abline(v=get_bmd(mod_scale)[2],lty='dashed')
+# abline(v=get_bmd(mod_scale)[1],lty='dotted')
 
 
 
+mod_scale_manual <- benchmark_dose_tmb(
+  monosmooths = list(s(x,bs='bs')),
+  smooths = list(s(z1,bs='bs'),s(z2,bs='bs')),
+  linearterms = NULL,
+  data = dat_scale,
+  exposure = 'x',
+  response = 'y',
+  x0 = 0,
+  p0 = .01,
+  BMR = .01,
+  verbose = TRUE,
+  eps = 1e-06,
+  maxitr = 10,
+  bayes_boot = 1e04,
+  scale_data = FALSE
+)
 
 
 
+# c(get_bmd(mod_noscale)[1],get_bmd(mod_scale)[1],get_bmd(mod_scale_manual)[1])
+# rbind(get_all_bmdl(mod_noscale),get_all_bmdl(mod_scale),get_all_bmdl(mod_scale_manual))
+#
+#
+# monosmooths = list(s(x,bs='bs'))
+# smooths = list(s(z1,bs='bs'),s(z2,bs='bs'))
+# linearterms = NULL
+# data = dat3
+# exposure = 'x'
+# response = 'y'
+# x0 = 0
+# p0 = .01
+# BMR = .01
+# verbose = TRUE
+# eps = 1e-06
+# maxitr = 10
+# bayes_boot = 1e03
+# scale_data = TRUE
 
 
 
