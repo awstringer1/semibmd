@@ -481,9 +481,10 @@ plot.semibmd <- function(x,plot=TRUE,...) {
             )))
           }
       }
+      if (!plot) names(out) <- c("mono",paste0("smooth_",1:length(mod$plotinfosmooth)))
     }
+
     if (!plot) {
-      names(out) <- c("mono",paste0("smooth_",1:length(mod$plotinfosmooth)))
       return(out)
     }
   }
