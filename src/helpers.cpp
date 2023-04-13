@@ -74,10 +74,12 @@ double deBoor(double x,int k,Eigen::VectorXd t,Eigen::VectorXd beta,int p) {
   //
   // outputs f(x) via deBoor's algorithm
 
-  std::cout << "p=" << p << ", beta length=" << beta.size() << ", k=" << k << ", t length=" << t.size() <<  std::endl;
   Eigen::VectorXd d(p);
   for (int j=0;j<p;j++) {
-    if (j+k-(p-1) < 0 || j+k-(p-1) > beta.size()-1) std::cout << "Accessing index " << j+k-(p-1) << "of beta" << std::endl; 
+    if (j+k-(p-1) < 0 || j+k-(p-1) > beta.size()-1) {
+	    std::cout << "p=" << p << ", beta length=" << beta.size() << ", k=" << k << ", t length=" << t.size() <<  std::endl;
+	    std::cout << "Accessing index " << j+k-(p-1) << "of beta" << std::endl; 
+    }
     d(j) = beta(j+k-(p-1));
   }
 
@@ -100,7 +102,7 @@ double deBoorDerivative(double x,int k,Eigen::VectorXd t,Eigen::VectorXd beta,in
 	// beta: ORIGINAL coefficients. will be transformed within the algorithm
 	// p: spline ORDER (cubic = 4)
 	//
-	// outputs f(x) via deBoor's algorithm
+	// outputs f'(x) via deBoor's algorithm
 
 	Eigen::VectorXd d(p-1);
 	for (int j=0;j<p-1;j++)
@@ -158,7 +160,7 @@ double Uxd_cpp(double x,Eigen::VectorXd beta,Eigen::VectorXd knots,int k,double 
   // Pass in DERIVATIVE knot sequence
   // UPDATE: no, pass in the original knot sequence, same signature as the spline function
   //double fxbp = deBoor(x,k,knots,beta,3); // OLD
-  double fxbp = deBoor(x,k,knots,beta,4); // NEW: same signature as the function
+  double fxbp = deBoorDerivative(x,k,knots,beta,4); // NEW: same signature as the function
   return -fxbp/sigmaest;
 }
 
@@ -203,9 +205,11 @@ double Psix_cpp(double x,Eigen::VectorXd beta,Eigen::MatrixXd V,Eigen::VectorXd 
 }
 
 // [[Rcpp::export]]
-double Psixd_cpp(double x,Eigen::VectorXd beta,Eigen::VectorXd betadiff,Eigen::MatrixXd V,Eigen::VectorXd knots,int k,double fx0,Eigen::VectorXd bx0,double sigmaest,double A) {
+//double Psixd_cpp(double x,Eigen::VectorXd beta,Eigen::VectorXd betadiff,Eigen::MatrixXd V,Eigen::VectorXd knots,int k,double fx0,Eigen::VectorXd bx0,double sigmaest,double A) {
+double Psixd_cpp(double x,Eigen::VectorXd beta,Eigen::MatrixXd V,Eigen::VectorXd knots,int k,double fx0,Eigen::VectorXd bx0,double sigmaest,double A) {
   double Ux = Ux_cpp(x,beta,knots,k,fx0,sigmaest,A);
-  double Uxd = Uxd_cpp(x,betadiff,knots,k,sigmaest);
+  //double Uxd = Uxd_cpp(x,betadiff,knots,k,sigmaest); // UPDATE: call with the original sequence
+  double Uxd = Uxd_cpp(x,beta,knots,k,sigmaest);
   double Vxd = Vxd_cpp(x,V,knots,bx0,sigmaest);
   double chisq = 3.841459;
 
@@ -255,9 +259,9 @@ double get_score_cpp(Eigen::VectorXd beta,Eigen::MatrixXd V,Eigen::VectorXd knot
   // Differenced coefficients
   int d = gamma.size(), p=4;
   Eigen::VectorXd gammadiff(d-1);
-  gammadiff(0) = 0;
-  for (int i=1;i<d-1;i++)
-    gammadiff(i) = (p-1)*(gamma(i) - gamma(i-1)) / (knots(i+p-1) - knots(i));
+  //gammadiff(0) = 0;
+  //for (int i=1;i<d-1;i++)
+    //gammadiff(i) = (p-1)*(gamma(i) - gamma(i-1)) / (knots(i+p-1) - knots(i));
 
   // Newton
   int itr=1,k=0;
@@ -265,9 +269,11 @@ double get_score_cpp(Eigen::VectorXd beta,Eigen::MatrixXd V,Eigen::VectorXd knot
   double gt=1.+eps; // Make sure it's bigger than eps to start
   double gpt = 1;
   while((itr < maxitr) && (abs(gt) > eps)) {
+    std::cout << "Iteration: " << itr << ", xt = " << xt << ", bounds = (" << bounds(0) << "," << bounds(1) << ")" << std::endl;
     k = knotindex(xt,knots);
     gt = Psix_cpp(xt,gamma,V,knots,k,fx0,bx0,sigmaest,A);
-    gpt = Psixd_cpp(xt,gamma,gammadiff,V,knots,k,fx0,bx0,sigmaest,A);
+    //gpt = Psixd_cpp(xt,gamma,gammadiff,V,knots,k,fx0,bx0,sigmaest,A);
+    gpt = Psixd_cpp(xt,gamma,V,knots,k,fx0,bx0,sigmaest,A);
     // std::cout << "itr " << itr << " xt " << xt << " gt " << gt << " gpt " << gpt << " k " << k << std::endl;
     xt -= gt / gpt;
     xt = reflect(xt,bounds(0),bounds(1));

@@ -344,7 +344,8 @@ benchmark_dose_tmb <- function(monosmooths,
 
   tm <- Sys.time()
   gammadiff <- (p-1)*c(0,diff(gammaest)[1:(length(gammaest)-1)]) / (tmbdata$smoothobj$knots[(p+1):(length(gammaest)+p)] - tmbdata$smoothobj$knots[2:(length(gammaest)+1)])
-  Upn <- abs(Uxd_cpp(bmd_est,gammadiff,tmbdata$smoothobj$knots,kx,sigmaest))
+  #Upn <- abs(Uxd_cpp(bmd_est,gammadiff,tmbdata$smoothobj$knots,kx,sigmaest))
+  Upn <- abs(Uxd_cpp(bmd_est,gamma,tmbdata$smoothobj$knots,kx,sigmaest))
   bmd_l_delta_est <- bmd_est - stats::qnorm(.975)*sqrt(Vn)/Upn
   dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
   out$info$computation_time$bmdl_delta <- dt + dt_tmp
