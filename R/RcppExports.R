@@ -25,6 +25,10 @@ deBoor <- function(x, k, t, beta, p) {
     .Call(`_semibmd_deBoor`, x, k, t, beta, p)
 }
 
+deBoorDerivative <- function(x, k, t, beta, p) {
+    .Call(`_semibmd_deBoorDerivative`, x, k, t, beta, p)
+}
+
 reflect <- function(xt, lb, ub) {
     .Call(`_semibmd_reflect`, xt, lb, ub)
 }
@@ -57,8 +61,8 @@ Psix_cpp <- function(x, beta, V, knots, k, fx0, bx0, sigmaest, A) {
     .Call(`_semibmd_Psix_cpp`, x, beta, V, knots, k, fx0, bx0, sigmaest, A)
 }
 
-Psixd_cpp <- function(x, beta, betadiff, V, knots, k, fx0, bx0, sigmaest, A) {
-    .Call(`_semibmd_Psixd_cpp`, x, beta, betadiff, V, knots, k, fx0, bx0, sigmaest, A)
+Psixd_cpp <- function(x, beta, V, knots, k, fx0, bx0, sigmaest, A) {
+    .Call(`_semibmd_Psixd_cpp`, x, beta, V, knots, k, fx0, bx0, sigmaest, A)
 }
 
 get_bmd_cpp <- function(beta, knots, bounds, x0, sigmaest, A, eps, maxitr) {

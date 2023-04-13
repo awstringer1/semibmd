@@ -163,7 +163,7 @@ mod1_tmb <- benchmark_dose_tmb(
 # eps=1e-06
 # maxitr=10
 # bayes_boot=1e03
-
+# scale_data = FALSE
 
 ## Multiple Smooth components ##
 
