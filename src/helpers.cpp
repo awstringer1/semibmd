@@ -87,7 +87,30 @@ double deBoor(double x,int k,Eigen::VectorXd t,Eigen::VectorXd beta,int p) {
 
     return d(p-1);
 }
+// deBoor's algorithm for spline derivatives.
+// [[Rcpp::export]]
+double deBoorDerivative(double x,int k,Eigen::VectorXd t,Eigen::VectorXd beta,int p) {
+	// x: evaluation point
+	// k: knot index 
+	// t: knots
+	// beta: ORIGINAL coefficients. will be transformed within the algorithm
+	// p: spline ORDER (cubic = 4)
+	//
+	// outputs f(x) via deBoor's algorithm
 
+	Eigen::VectorXd d(p-1);
+	for (int j=0;j<p-1;j++)
+		d(j) = (p-1) * (beta(j+k-(p-1)+1) - beta(j+k-(p-1))) / (t(j+k+1) - t(j+k-(p-1)+1));
+	
+	double a =0.;
+	for (int r=1;r<p-1;r++)
+		for (int j=(p-2);j>r-1;j--) {
+			a = (x-t(j+k-(p-2))) / (t(j+1+k-r) - t(j+k-(p-2)));
+			d(j) = (1. - a)*d(j-1) + a*d(j);
+		}
+
+	return d(p-2);
+}
 // Bounded Newton.
 // [[Rcpp::export]]
 double reflect(double xt,double lb,double ub) {
@@ -129,7 +152,9 @@ double Ux_cpp(double x,Eigen::VectorXd beta,Eigen::VectorXd knots,int k,double f
 // [[Rcpp::export]]
 double Uxd_cpp(double x,Eigen::VectorXd beta,Eigen::VectorXd knots,int k,double sigmaest) {
   // Pass in DERIVATIVE knot sequence
-  double fxbp = deBoor(x,k,knots,beta,3);
+  // UPDATE: no, pass in the original knot sequence, same signature as the spline function
+  //double fxbp = deBoor(x,k,knots,beta,3); // OLD
+  double fxbp = deBoor(x,k,knots,beta,4); // NEW: same signature as the function
   return -fxbp/sigmaest;
 }
 
@@ -192,11 +217,11 @@ double get_bmd_cpp(Eigen::VectorXd beta,Eigen::VectorXd knots,Eigen::VectorXd bo
   double fx0 = deBoor(x0,knotindex(x0,knots),knots,gamma,4);
   // Differenced coefficients
   int d = gamma.size(), p=4;
-  Eigen::VectorXd gammadiff(d-1);
+  /** Eigen::VectorXd gammadiff(d-1);
   gammadiff(0) = 0;
   for (int i=1;i<d-1;i++)
     gammadiff(i) = (p-1)*(gamma(i) - gamma(i-1)) / (knots(i+p-1) - knots(i));
-
+  **/
   // Newton
   int itr=1,k=0;
   double xt = (bounds(0)+bounds(1))/2.;
@@ -205,7 +230,8 @@ double get_bmd_cpp(Eigen::VectorXd beta,Eigen::VectorXd knots,Eigen::VectorXd bo
   while((itr < maxitr) && (abs(gt) > eps)) {
     k = knotindex(xt,knots);
     gt = Ux_cpp(xt,gamma,knots,k,fx0,sigmaest,A);
-    gpt = Uxd_cpp(xt,gammadiff,knots,k,sigmaest);
+    //gpt = Uxd_cpp(xt,gammadiff,knots,k,sigmaest);
+    gpt = Uxd_cpp(xt,gamma,knots,k,sigmaest);
     // std::cout << "itr " << itr << " xt " << xt << " gt " << gt << " gpt " << gpt << " k " << k << std::endl;
     xt -= gt / gpt;
     xt = reflect(xt,bounds(0),bounds(1));
