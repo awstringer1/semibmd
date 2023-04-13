@@ -74,13 +74,17 @@ double deBoor(double x,int k,Eigen::VectorXd t,Eigen::VectorXd beta,int p) {
   //
   // outputs f(x) via deBoor's algorithm
 
+  std::cout << "p=" << p << ", beta length=" << beta.size() << ", k=" << k << ", t length=" << t.size() <<  std::endl;
   Eigen::VectorXd d(p);
-  for (int j=0;j<p;j++)
+  for (int j=0;j<p;j++) {
+    if (j+k-(p-1) < 0 || j+k-(p-1) > beta.size()-1) std::cout << "Accessing index " << j+k-(p-1) << "of beta" << std::endl; 
     d(j) = beta(j+k-(p-1));
+  }
 
   double a =0.;
   for (int r=1;r<p;r++)
     for (int j=(p-1);j>r-1;j--) {
+      if (j+k-(p-1) < 0 || j+k-(p-1) > t.size()-1 || j+1+k-r < 0 || j+1+k-r > t.size()-1) std::cout << "Accessing indices " << j+k-(p-1) << ", " << j+1+k-r << " of t" << std::endl;	    
       a = (x-t(j+k-(p-1))) / (t(j+1+k-r) - t(j+k-(p-1)));
       d(j) = (1. - a)*d(j-1) + a*d(j);
     }
