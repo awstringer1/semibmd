@@ -229,7 +229,10 @@ double get_bmd_cpp(Eigen::VectorXd beta,Eigen::VectorXd knots,Eigen::VectorXd bo
   // Setup initial quantities
   Eigen::VectorXd gamma = get_gamma(beta);
   // std::cout << "gamma = " << gamma << std::endl << std::endl;
-  if (isnan(x0)) std::cout << "nan x0 inside get_bmd_cpp" << std::endl;
+  if (isnan(x0)) {
+	  //std::cout << "nan x0 inside get_bmd_cpp" << std::endl;
+	  return bounds(0)-1.;
+  }
   double fx0 = deBoor(x0,knotindex(x0,knots),knots,gamma,4);
   // Differenced coefficients
   int d = gamma.size(), p=4;
@@ -244,12 +247,24 @@ double get_bmd_cpp(Eigen::VectorXd beta,Eigen::VectorXd knots,Eigen::VectorXd bo
   double gt=1.+eps; // Make sure it's bigger than eps to start
   double gpt = 1;
   while((itr < maxitr) && (abs(gt) > eps)) {
-    if (isnan(xt)) std::cout << "nan xt in get_bmd_cpp at iteration " << itr << ", gt = " << gt << ", gpt = " << gpt << std::endl;
+    if (isnan(xt)) {
+	    //std::cout << "nan xt in get_bmd_cpp at iteration " << itr << ", gt = " << gt << ", gpt = " << gpt << std::endl;
+	    return bounds(0)-1.;
+    }
     k = knotindex(xt,knots);
     gt = Ux_cpp(xt,gamma,knots,k,fx0,sigmaest,A);
     //gpt = Uxd_cpp(xt,gammadiff,knots,k,sigmaest);
     gpt = Uxd_cpp(xt,gamma,knots,k,sigmaest);
-    std::cout << "itr " << itr << " xt " << xt << " gt " << gt << " gpt " << gpt << " k " << k << std::endl;
+    //std::cout << "itr " << itr << " xt " << xt << " gt " << gt << " gpt " << gpt << " k " << k << std::endl;
+    // If zero curvature, return an error value
+    if (abs(gpt) < 1e-08) {
+	    //std::cout << "Returning error from get_bmd_cpp due to abs(gpt) < 1e-08, xt = " << xt << ", gt = " << gt << ", gpt = " << gpt << std::endl;
+	    return bounds(0)-1.;
+    }
+    if (isinf(gpt)) {
+	    //std::cout << "Returning error from get_bmd_cpp due to infinite gpt, xt = " << xt << ", gt = " << gt << ", gpt = " << gpt << std::endl;
+	    return bounds(0)-1.;
+    }
     xt -= gt / gpt;
     xt = reflect(xt,bounds(0),bounds(1));
     itr++;
@@ -263,7 +278,10 @@ double get_score_cpp(Eigen::VectorXd beta,Eigen::MatrixXd V,Eigen::VectorXd knot
   // Setup initial quantities
   Eigen::VectorXd gamma = get_gamma(beta);
   // std::cout << "gamma = " << gamma << std::endl << std::endl;
-  if (isnan(x0)) std::cout << "nan x0 inside get_score_cpp" << std::endl;
+  if (isnan(x0)) {
+	  std::cout << "nan x0 inside get_score_cpp" << std::endl;
+	  return bounds(0)-1.;
+  }
   double fx0 = deBoor(x0,knotindex(x0,knots),knots,gamma,4);
   Eigen::VectorXd bx0 = Bsplinevec(x0,knots,4);
   // Differenced coefficients
@@ -280,12 +298,24 @@ double get_score_cpp(Eigen::VectorXd beta,Eigen::MatrixXd V,Eigen::VectorXd knot
   double gpt = 1;
   while((itr < maxitr) && (abs(gt) > eps)) {
     //std::cout << "Iteration: " << itr << ", xt = " << xt << ", bounds = (" << bounds(0) << "," << bounds(1) << ")" << std::endl;
-    if (isnan(xt)) std::cout << "nan xt in get_score_cpp at iteration " << itr << ", gt = " << gt << ", gpt = " << gpt << std::endl;
+    if (isnan(xt)) {
+	    //std::cout << "nan xt in get_score_cpp at iteration " << itr << ", gt = " << gt << ", gpt = " << gpt << std::endl;
+	    return bounds(0)-1.;
+    }
     k = knotindex(xt,knots);
     gt = Psix_cpp(xt,gamma,V,knots,k,fx0,bx0,sigmaest,A);
     //gpt = Psixd_cpp(xt,gamma,gammadiff,V,knots,k,fx0,bx0,sigmaest,A);
     gpt = Psixd_cpp(xt,gamma,V,knots,k,fx0,bx0,sigmaest,A);
     // std::cout << "itr " << itr << " xt " << xt << " gt " << gt << " gpt " << gpt << " k " << k << std::endl;
+    // If zero curvature, return an error value
+    if (abs(gpt) < 1e-08) {
+	    //std::cout << "Returning error from get_score_cpp due to abs(gpt) < 1e-08, xt = " << xt << ", gt = " << gt << ", gpt = " << gpt << std::endl;
+	    return bounds(0)-1.;
+    }
+    if (isinf(gpt)) {
+	    //std::cout << "Returning error from get_score_cpp due to infinite gpt, xt = " << xt << ", gt = " << gt << ", gpt = " << gpt << std::endl;
+	    return bounds(0)-1.;
+    }
     xt -= gt / gpt;
     xt = reflect(xt,bounds(0),bounds(1));
     itr++;

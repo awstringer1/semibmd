@@ -288,6 +288,9 @@ benchmark_dose_tmb <- function(monosmooths,
     tmp <- tryCatch(get_bmd_cpp(samps$beta[ ,b],tmbdata$smoothobj$knots,c(x0,xmax),x0,sigmaest,A,1e-06,100),error = function(e) e)
     if (inherits(tmp,'condition')) {
       bmd_samps[b] <- -1
+    } else if (tmp < x0) {
+      # if get_bmd_cpp returns less than lower bound, it's an error
+      bmd_samps[b] <- -1 
     } else {
       bmd_samps[b] <- tmp
     }
@@ -306,6 +309,13 @@ benchmark_dose_tmb <- function(monosmooths,
     out$info$bmd_samps <- bmd_samps
     out$info$bmd_samps_clean <- bmd_samps_clean
     return(out)
+  } else if (bmd_est < x0) {
+    if (verbose) cat("Received error value",bmd_est,"from get_bmd_cpp when estimating BMD.\n")
+    out$info$errors$bmd_est <- bmd_est
+    out$info$bmd_samps <- bmd_samps
+    out$info$bmd_samps_clean <- bmd_samps_clean
+    return(out)
+
   }
   out$bmd <- bmd_est
   dt <- as.numeric(difftime(Sys.time(),tm,units='secs'))
@@ -359,6 +369,10 @@ benchmark_dose_tmb <- function(monosmooths,
   out$info$computation_time$bmdl_score <- dt + dt_tmp
   if (inherits(bmd_l_score_est,'condition')) {
     if (verbose) cat("Received the following error when estimating score BMDL:",bmd_l_score_est$bmd_l_score_est,".\n")
+    out$info$errors$bmd_l_score_est <- bmd_l_score_est
+    return(out)
+  } else if (bmd_l_score_est < x0) {
+    if (verbose) cat("Received error value",bmd_l_score_est,"when estimating BMDL via get_score_cpp.\n")
     out$info$errors$bmd_l_score_est <- bmd_l_score_est
     return(out)
   }
