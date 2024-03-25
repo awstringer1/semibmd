@@ -354,6 +354,60 @@ print.summary.semibmd <- function(x,digits = 4,...) {
   cat("---\n")
 }
 
+#' Prediction methods for \code{semibmd} objects
+#'
+#' Predict, fitted, and residuals methods for \code{semibmd} objects returned by \code{semibmd::benchmark_dose}.
+#' Combines the standard plot from \code{scam/gam} with the benchmark dosing information
+#' computed by \code{benchmark_dose} and \code{summary.semibmd}.
+#'
+#' @param object Object of class \code{semibmd} returned by \code{semibmd::benchmark_dose}.
+#' @param newdata Data frame containing all the variables in \code{get_data(object)} and one row for each value for
+#' which a predicted response is required.
+#' @param ... Not used.
+#'
+#' @details The \code{predict} function computes the design matrix \code{X} at \code{newdata} and then computes \code{X \%*\% gamma} where
+#' \code{gamma} is the estimated parameter vector for the monotone regression coefficients, denoted by \code{beta\_c} in the paper.
+#' Then, the mean of these predictions is subtracted and the estimated intercept \code{alpha} is added on.
+#' For more advanced computations required to predict each fitted smooth, see \code{plot.semibmd} with \code{plot = FALSE}.
+#' The \code{fitted} function just calls \code{predict} with its default arguments and the \code{residuals} function just subtracts
+#' \code{fitted} from the response.
+#'
+#' @return A numeric vector containing the predictions or residuals as appropriate.
+#'
+#' @rdname predict.semibmd
+#'
+#' @export
+predict.semibmd <- function(object, newdata = get_data(object), ...) {
+  # Construct the design matrix for prediction
+  mod <- get_model(object)
+  XX <- mgcv::PredictMat(mod$plotinfo$monosmoothobj,newdata$data)
+  if (length(mod$plotinfosmooth) > 0) {
+    for (j in 1:length(mod$plotinfosmooth[[1]]$smoothobj)) {
+      tmpX <- mgcv::PredictMat(mod$plotinfosmooth[[1]]$smoothobj[[j]],newdata$data)
+      XX <- cbind(XX, tmpX)
+    }
+  }
+  estimates <- get_estimates(object)
+  beta <- with(estimates, c(gamma, betasmooth))
+  fitted <- XX %*% beta
+  fitted <- fitted - mean(fitted) + estimates$alpha
+  fitted
+}
+#' @rdname predict.semibmd
+#' @export
+fitted.semibmd <- function(object, ...) {
+  predict.semibmd(object, ...)
+}
+#' @rdname predict.semibmd
+#' @export
+residuals.semibmd <- function(object, ...) {
+  fit <- fitted.semibmd(object, ...)
+  dat <- get_data(object)
+  y <- dat$data[[dat$response]]
+  y - fit
+}
+
+
 #' Plot method for \code{semibmd} objects
 #'
 #' Plot method for \code{semibmd} objects returned by \code{semibmd::benchmark_dose}.

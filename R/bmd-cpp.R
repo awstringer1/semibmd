@@ -54,7 +54,9 @@ benchmark_dose_tmb <- function(monosmooths,
 ) {
   ## Create output object ##
   out <- list(
-    info = list(errors = list(),bmdl_alternatives = list(),computation_time = list(),data = data)
+    info = list(errors = list(),bmdl_alternatives = list(),computation_time = list(),
+    data = list(data = data, response = response, exposure = exposure, smooths = list(mono = monosmooths, nonmono = smooths)), 
+    estimates = list())
   )
   class(out) <- "semibmd"
 
@@ -235,7 +237,20 @@ benchmark_dose_tmb <- function(monosmooths,
   # }
   betaRFest <- randest[names(randest) %in% c("betaRmono","betaFmono")]
   betaest <- as.numeric(tmbdata$Umono %*% betaRFest)
-  gammaest <- get_gamma(betaest) # Do this after scaling
+  gammaest <- get_gamma(betaest)
+  # nonmonotone
+  if (nonmono) {
+    betaRFestsmooth <- randest[names(randest) %in% c("betaRsmooth","betaFsmooth")]
+    betaestsmooth <- as.numeric(tmbdata$Usmooth %*% betaRFestsmooth)
+  }
+
+  # Fill the list of parameter estimates
+  out$info$estimates <- list(
+    beta = betaest, gamma = gammaest, alpha = alphaest, lambda = lambdaest, sigma = sigmaest
+  )
+  if (nonmono) {
+    out$info$estimates <- c(out$info$estimates, list(betasmooth = betaestsmooth))
+  }
 
   ## Standard Errors ##
   fullprec <- tryCatch(TMB::sdreport(template_inner,getJointPrecision=TRUE)$jointPrecision,error = function(e) e)
@@ -254,6 +269,7 @@ benchmark_dose_tmb <- function(monosmooths,
   paramdimrandom <- length(randomidx)
   hyperidx <- (paramdimrandom+1):(paramdimfull)
   randprec <- fullprec[randomidx,randomidx]
+
 
   # UPDATE: index out the monotone smooths and the intercept, not all random effects
   monoidx <- which(names(randest) %in% c("betaRmono","betaFmono","alpha"))

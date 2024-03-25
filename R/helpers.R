@@ -230,3 +230,45 @@ get_samples <- function(beta,alpha,H,tmbdata,M=1000,nonmonocoef=NULL) {
 
 
 
+#' Get data used to fit the dose-response model
+#'
+#' Helper function to extract the data used to fit the dose-response model in an object of class \code{semibmd}
+#' returned by \code{benchmark_dose_tmb}.
+#'
+#' @param object Object of class \code{semibmd}
+#' returned by \code{benchmark_dose_tmb}
+#' @param ... Not used
+#'
+#' @return  A list containing elements \code{data}, the \code{data.frame} passed to \code{benchmark_dose_tmb};
+#' \code{response}, the name of the response variable; \code{exposure}, the name of the exposure variable; and
+#' \code{smooths}, a list with smoothing formulas used for the monotone and nonmonotone parts of the model.
+#'
+#' @rdname data
+#'
+#' @export
+get_data <- function(object,...) {
+  object$info$data
+}
+
+#' Get parameter estimates from the fitted dose-response model
+#'
+#' Helper function to extract the parameter estimates from the fitted dose-response model in an object of class \code{semibmd}
+#' returned by \code{benchmark_dose_tmb}.
+#'
+#' @param object Object of class \code{semibmd}
+#' returned by \code{benchmark_dose_tmb}
+#' @param ... Not used
+#'
+#' @return  A list containing elements \code{beta}, \code{gamma}, \code{alpha}, \code{lambda}, and \code{sigma}
+#' representing, respectively: the un-restricted regression coefficients, the monotone transformed regression coefficients,
+#' the intercept, the estimated smoothing parameters, and the estimated residual standard deviation, from the fitted dose-response
+#' model. The parameter Hessian is not included, because we are very careful about the scale on which we apply asymptotic
+#' Gaussian approximations in this problem. For standard errors, we recommend bootstrapping; see \code{plot.semibmd}.
+#'
+#' @rdname estimates
+#'
+#' @export
+get_estimates <- function(object,...) {
+  object$info$estimates
+}
+

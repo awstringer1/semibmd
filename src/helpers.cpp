@@ -76,17 +76,17 @@ double deBoor(double x,int k,Eigen::VectorXd t,Eigen::VectorXd beta,int p) {
 
   Eigen::VectorXd d(p);
   for (int j=0;j<p;j++) {
-    if (j+k-(p-1) < 0 || j+k-(p-1) > beta.size()-1) {
-	    std::cout << "deBoor with x = " << x << ", p=" << p << ", beta length=" << beta.size() << ", k=" << k << ", t length=" << t.size() <<  std::endl;
-	    std::cout << "Accessing index " << j+k-(p-1) << "of beta" << std::endl; 
-    }
+    // if (j+k-(p-1) < 0 || j+k-(p-1) > beta.size()-1) {
+	  //   Rcout << "deBoor with x = " << x << ", p=" << p << ", beta length=" << beta.size() << ", k=" << k << ", t length=" << t.size() <<  std::endl;
+	  //   Rcout << "Accessing index " << j+k-(p-1) << "of beta" << std::endl; 
+    // }
     d(j) = beta(j+k-(p-1));
   }
 
   double a =0.;
   for (int r=1;r<p;r++)
     for (int j=(p-1);j>r-1;j--) {
-      if (j+k-(p-1) < 0 || j+k-(p-1) > t.size()-1 || j+1+k-r < 0 || j+1+k-r > t.size()-1) std::cout << "Accessing indices " << j+k-(p-1) << ", " << j+1+k-r << " of t" << std::endl;	    
+      if (j+k-(p-1) < 0 || j+k-(p-1) > t.size()-1 || j+1+k-r < 0 || j+1+k-r > t.size()-1) Rcout << "Accessing indices " << j+k-(p-1) << ", " << j+1+k-r << " of t" << std::endl;	    
       a = (x-t(j+k-(p-1))) / (t(j+1+k-r) - t(j+k-(p-1)));
       d(j) = (1. - a)*d(j-1) + a*d(j);
     }
@@ -106,17 +106,17 @@ double deBoorDerivative(double x,int k,Eigen::VectorXd t,Eigen::VectorXd beta,in
 
 	Eigen::VectorXd d(p-1);
 	for (int j=0;j<p-1;j++) {
-	    if (j+k-(p-1)+1 < 0 || j+k-(p-1)+1 > beta.size()-1) {
-		    std::cout << "deBoor with x = " << x << ", p=" << p << ", beta length=" << beta.size() << ", k=" << k << ", t length=" << t.size() <<  std::endl;
-		    std::cout << "Accessing index " << j+k-(p-1)+1 << "of beta" << std::endl; 
-	    }
+	    // if (j+k-(p-1)+1 < 0 || j+k-(p-1)+1 > beta.size()-1) {
+		  //   Rcout << "deBoor with x = " << x << ", p=" << p << ", beta length=" << beta.size() << ", k=" << k << ", t length=" << t.size() <<  std::endl;
+		  //   Rcout << "Accessing index " << j+k-(p-1)+1 << "of beta" << std::endl; 
+	    // }
 		d(j) = (p-1) * (beta(j+k-(p-1)+1) - beta(j+k-(p-1))) / (t(j+k+1) - t(j+k-(p-1)+1));
 	}
 
 	double a =0.;
 	for (int r=1;r<p-1;r++)
 		for (int j=(p-2);j>r-1;j--) {
-		      if (j+k-(p-2) < 0 || j+k-(p-2) > t.size()-1 || j+1+k-r < 0 || j+1+k-r > t.size()-1) std::cout << "Accessing indices " << j+k-(p-2) << ", " << j+1+k-r << " of t" << std::endl;	    
+		      // if (j+k-(p-2) < 0 || j+k-(p-2) > t.size()-1 || j+1+k-r < 0 || j+1+k-r > t.size()-1) Rcout << "Accessing indices " << j+k-(p-2) << ", " << j+1+k-r << " of t" << std::endl;	    
 			a = (x-t(j+k-(p-2))) / (t(j+1+k-r) - t(j+k-(p-2)));
 			d(j) = (1. - a)*d(j-1) + a*d(j);
 		}
@@ -158,7 +158,7 @@ Eigen::VectorXd get_gamma(Eigen::VectorXd beta) {
 // Get BMD without function passing, full in C++
 // [[Rcpp::export]]
 double Ux_cpp(double x,Eigen::VectorXd beta,Eigen::VectorXd knots,int k,double fx0,double sigmaest,double A) {
-  if (std::isnan(x)) std::cout << "nan x inside Ux_cpp" << std::endl;
+  if (std::isnan(x)) Rcout << "nan x inside Ux_cpp" << std::endl;
   double fxb = deBoor(x,k,knots,beta,4);
   return (fx0 - fxb)/sigmaest - A;
 }
@@ -167,7 +167,7 @@ double Uxd_cpp(double x,Eigen::VectorXd beta,Eigen::VectorXd knots,int k,double 
   // Pass in DERIVATIVE knot sequence
   // UPDATE: no, pass in the original knot sequence, same signature as the spline function
   //double fxbp = deBoor(x,k,knots,beta,3); // OLD
-  if (std::isnan(x)) std::cout << "nan x inside Uxd_cpp" << std::endl;
+  if (std::isnan(x)) Rcout << "nan x inside Uxd_cpp" << std::endl;
   double fxbp = deBoorDerivative(x,k,knots,beta,4); // NEW: same signature as the function
   return -fxbp/sigmaest;
 }
@@ -228,9 +228,9 @@ double Psixd_cpp(double x,Eigen::VectorXd beta,Eigen::MatrixXd V,Eigen::VectorXd
 double get_bmd_cpp(Eigen::VectorXd beta,Eigen::VectorXd knots,Eigen::VectorXd bounds,double x0,double sigmaest,double A,double eps,int maxitr) {
   // Setup initial quantities
   Eigen::VectorXd gamma = get_gamma(beta);
-  // std::cout << "gamma = " << gamma << std::endl << std::endl;
+  // Rcout << "gamma = " << gamma << std::endl << std::endl;
   if (std::isnan(x0)) {
-	  //std::cout << "nan x0 inside get_bmd_cpp" << std::endl;
+	  //Rcout << "nan x0 inside get_bmd_cpp" << std::endl;
 	  return bounds(0)-1.;
   }
   double fx0 = deBoor(x0,knotindex(x0,knots),knots,gamma,4);
@@ -248,21 +248,21 @@ double get_bmd_cpp(Eigen::VectorXd beta,Eigen::VectorXd knots,Eigen::VectorXd bo
   double gpt = 1;
   while((itr < maxitr) && (abs(gt) > eps)) {
     if (std::isnan(xt)) {
-	    //std::cout << "nan xt in get_bmd_cpp at iteration " << itr << ", gt = " << gt << ", gpt = " << gpt << std::endl;
+	    //Rcout << "nan xt in get_bmd_cpp at iteration " << itr << ", gt = " << gt << ", gpt = " << gpt << std::endl;
 	    return bounds(0)-1.;
     }
     k = knotindex(xt,knots);
     gt = Ux_cpp(xt,gamma,knots,k,fx0,sigmaest,A);
     //gpt = Uxd_cpp(xt,gammadiff,knots,k,sigmaest);
     gpt = Uxd_cpp(xt,gamma,knots,k,sigmaest);
-    //std::cout << "itr " << itr << " xt " << xt << " gt " << gt << " gpt " << gpt << " k " << k << std::endl;
+    //Rcout << "itr " << itr << " xt " << xt << " gt " << gt << " gpt " << gpt << " k " << k << std::endl;
     // If zero curvature, return an error value
     if (abs(gpt) < 1e-08) {
-	    //std::cout << "Returning error from get_bmd_cpp due to abs(gpt) < 1e-08, xt = " << xt << ", gt = " << gt << ", gpt = " << gpt << std::endl;
+	    //Rcout << "Returning error from get_bmd_cpp due to abs(gpt) < 1e-08, xt = " << xt << ", gt = " << gt << ", gpt = " << gpt << std::endl;
 	    return bounds(0)-1.;
     }
     if (std::isinf(gpt)) {
-	    //std::cout << "Returning error from get_bmd_cpp due to infinite gpt, xt = " << xt << ", gt = " << gt << ", gpt = " << gpt << std::endl;
+	    //Rcout << "Returning error from get_bmd_cpp due to infinite gpt, xt = " << xt << ", gt = " << gt << ", gpt = " << gpt << std::endl;
 	    return bounds(0)-1.;
     }
     xt -= gt / gpt;
@@ -277,9 +277,9 @@ double get_bmd_cpp(Eigen::VectorXd beta,Eigen::VectorXd knots,Eigen::VectorXd bo
 double get_score_cpp(Eigen::VectorXd beta,Eigen::MatrixXd V,Eigen::VectorXd knots,Eigen::VectorXd bounds,double x0,double sigmaest,double A,double eps,int maxitr) {
   // Setup initial quantities
   Eigen::VectorXd gamma = get_gamma(beta);
-  // std::cout << "gamma = " << gamma << std::endl << std::endl;
+  // Rcout << "gamma = " << gamma << std::endl << std::endl;
   if (std::isnan(x0)) {
-	  std::cout << "nan x0 inside get_score_cpp" << std::endl;
+	  Rcout << "nan x0 inside get_score_cpp" << std::endl;
 	  return bounds(0)-1.;
   }
   double fx0 = deBoor(x0,knotindex(x0,knots),knots,gamma,4);
@@ -297,23 +297,23 @@ double get_score_cpp(Eigen::VectorXd beta,Eigen::MatrixXd V,Eigen::VectorXd knot
   double gt=1.+eps; // Make sure it's bigger than eps to start
   double gpt = 1;
   while((itr < maxitr) && (abs(gt) > eps)) {
-    //std::cout << "Iteration: " << itr << ", xt = " << xt << ", bounds = (" << bounds(0) << "," << bounds(1) << ")" << std::endl;
+    //Rcout << "Iteration: " << itr << ", xt = " << xt << ", bounds = (" << bounds(0) << "," << bounds(1) << ")" << std::endl;
     if (std::isnan(xt)) {
-	    //std::cout << "nan xt in get_score_cpp at iteration " << itr << ", gt = " << gt << ", gpt = " << gpt << std::endl;
+	    //Rcout << "nan xt in get_score_cpp at iteration " << itr << ", gt = " << gt << ", gpt = " << gpt << std::endl;
 	    return bounds(0)-1.;
     }
     k = knotindex(xt,knots);
     gt = Psix_cpp(xt,gamma,V,knots,k,fx0,bx0,sigmaest,A);
     //gpt = Psixd_cpp(xt,gamma,gammadiff,V,knots,k,fx0,bx0,sigmaest,A);
     gpt = Psixd_cpp(xt,gamma,V,knots,k,fx0,bx0,sigmaest,A);
-    // std::cout << "itr " << itr << " xt " << xt << " gt " << gt << " gpt " << gpt << " k " << k << std::endl;
+    // Rcout << "itr " << itr << " xt " << xt << " gt " << gt << " gpt " << gpt << " k " << k << std::endl;
     // If zero curvature, return an error value
     if (abs(gpt) < 1e-08) {
-	    //std::cout << "Returning error from get_score_cpp due to abs(gpt) < 1e-08, xt = " << xt << ", gt = " << gt << ", gpt = " << gpt << std::endl;
+	    //Rcout << "Returning error from get_score_cpp due to abs(gpt) < 1e-08, xt = " << xt << ", gt = " << gt << ", gpt = " << gpt << std::endl;
 	    return bounds(0)-1.;
     }
     if (std::isinf(gpt)) {
-	    //std::cout << "Returning error from get_score_cpp due to infinite gpt, xt = " << xt << ", gt = " << gt << ", gpt = " << gpt << std::endl;
+	    //Rcout << "Returning error from get_score_cpp due to infinite gpt, xt = " << xt << ", gt = " << gt << ", gpt = " << gpt << std::endl;
 	    return bounds(0)-1.;
     }
     xt -= gt / gpt;
