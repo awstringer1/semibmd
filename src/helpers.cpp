@@ -2,6 +2,8 @@
 #include <RcppEigen.h>
 using namespace Rcpp;
 
+double CHISQ = 5.023886;
+
 // get the 0-based knot index
 // [[Rcpp::export]]
 int knotindex(double x,Eigen::VectorXd t) {
@@ -208,8 +210,10 @@ double Vxd_cpp(double x,Eigen::MatrixXd V,Eigen::VectorXd knots,Eigen::VectorXd 
 double Psix_cpp(double x,Eigen::VectorXd beta,Eigen::MatrixXd V,Eigen::VectorXd knots,int k,double fx0,Eigen::VectorXd bx0,double sigmaest,double A) {
   double Ux = Ux_cpp(x,beta,knots,k,fx0,sigmaest,A);
   double Vx = Vx_cpp(x,V,knots,bx0,sigmaest);
-  double chisq = 3.841459;
-  return (Ux*Ux) - Vx*chisq;
+  // double chisq = 3.841459;
+  // return (Ux*Ux) - Vx*chisq;
+  return (Ux*Ux) - Vx*CHISQ;
+  
 }
 
 // [[Rcpp::export]]
@@ -218,9 +222,11 @@ double Psixd_cpp(double x,Eigen::VectorXd beta,Eigen::MatrixXd V,Eigen::VectorXd
   //double Uxd = Uxd_cpp(x,betadiff,knots,k,sigmaest); // UPDATE: call with the original sequence
   double Uxd = Uxd_cpp(x,beta,knots,k,sigmaest);
   double Vxd = Vxd_cpp(x,V,knots,bx0,sigmaest);
-  double chisq = 3.841459;
+  // double chisq = 3.841459;
 
-  return 2*Ux*Uxd - Vxd*chisq;
+  // return 2*Ux*Uxd - Vxd*chisq;
+  return 2*Ux*Uxd - Vxd*CHISQ;
+  
 }
 
 
